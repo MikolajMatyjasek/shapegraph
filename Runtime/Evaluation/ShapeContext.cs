@@ -14,11 +14,16 @@ namespace Galaretka.ShapeGraph.Evaluation
         private readonly Dictionary<PortKey, Color32> color32Cache = new();
 
         public int GlobalSeed { get; }
+        public float TimeSeconds { get; }
 
-        public ShapeContext(int globalSeed, IReadOnlyDictionary<ParameterId, ParameterValue> overrides = null)
+        public ShapeContext(
+            int globalSeed,
+            IReadOnlyDictionary<ParameterId, ParameterValue> overrides = null,
+            float timeSeconds = 0f)
         {
             GlobalSeed = globalSeed;
             parameterOverrides = overrides;
+            TimeSeconds = timeSeconds;
         }
 
         public bool TryGetOverride(ParameterId id, out ParameterValue value)
@@ -61,16 +66,12 @@ namespace Galaretka.ShapeGraph.Evaluation
 
             int span = max - min + 1;
             if (span <= 1)
-            {
                 return min;
-            }
 
             float t = Next01(paramId);
             int offset = Mathf.FloorToInt(t * span);
             if (offset >= span)
-            {
                 offset = span - 1;
-            }
             return min + offset;
         }
     }

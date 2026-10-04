@@ -55,20 +55,22 @@ namespace Galaretka.ShapeGraph.Samples.Smoke
         [SerializeField]
         private float polygonOutlineThickness = 0.04f;
 
-        [Header("Circle branch")]
+        [Header("Ellipse branch")]
         [SerializeField]
-        private Vector2 circleTranslation = new Vector2(0.55f, -0.08f);
+        private Vector2 ellipseTranslation = new Vector2(0.55f, -0.08f);
         [SerializeField]
-        private float circleRadius = 0.32f;
+        private float ellipseRadiusX = 0.42f;
+        [SerializeField]
+        private float ellipseRadiusY = 0.24f;
         [SerializeField]
         [Min(3)]
-        private int circleSegments = 48;
+        private int ellipseSegments = 48;
         [SerializeField]
-        private Color32 circleFill = new Color32(140, 200, 120, 255);
+        private Color32 ellipseFill = new Color32(140, 200, 120, 255);
         [SerializeField]
-        private Color32 circleOutline = new Color32(16, 36, 18, 255);
+        private Color32 ellipseOutline = new Color32(16, 36, 18, 255);
         [SerializeField]
-        private float circleOutlineThickness = 0.04f;
+        private float ellipseOutlineThickness = 0.04f;
 
         private ProceduralShapeInstance instance;
         private ShapeGraphAsset graphAsset;
@@ -83,10 +85,10 @@ namespace Galaretka.ShapeGraph.Samples.Smoke
         private FillStyleNode hexFillNode;
         private OutlineStyleNode hexOutlineNode;
 
-        private CircleNode circleNode;
-        private TransformNode circleTransformNode;
-        private FillStyleNode circleFillNode;
-        private OutlineStyleNode circleOutlineNode;
+        private EllipseNode ellipseNode;
+        private TransformNode ellipseTransformNode;
+        private FillStyleNode ellipseFillNode;
+        private OutlineStyleNode ellipseOutlineNode;
 
         private ComposeShapesNode composeNode;
         private MeshOutputNode outputNode;
@@ -145,10 +147,10 @@ namespace Galaretka.ShapeGraph.Samples.Smoke
             hexFillNode = CreateHidden<FillStyleNode>("HexFill");
             hexOutlineNode = CreateHidden<OutlineStyleNode>("HexOutline");
 
-            circleNode = CreateHidden<CircleNode>("Circle");
-            circleTransformNode = CreateHidden<TransformNode>("CircleTransform");
-            circleFillNode = CreateHidden<FillStyleNode>("CircleFill");
-            circleOutlineNode = CreateHidden<OutlineStyleNode>("CircleOutline");
+            ellipseNode = CreateHidden<EllipseNode>("Ellipse");
+            ellipseTransformNode = CreateHidden<TransformNode>("EllipseTransform");
+            ellipseFillNode = CreateHidden<FillStyleNode>("EllipseFill");
+            ellipseOutlineNode = CreateHidden<OutlineStyleNode>("EllipseOutline");
 
             composeNode = CreateHidden<ComposeShapesNode>("Compose");
             outputNode = CreateHidden<MeshOutputNode>("MeshOutput");
@@ -161,10 +163,10 @@ namespace Galaretka.ShapeGraph.Samples.Smoke
             graphAsset.AddNodeDirectly(hexTransformNode);
             graphAsset.AddNodeDirectly(hexFillNode);
             graphAsset.AddNodeDirectly(hexOutlineNode);
-            graphAsset.AddNodeDirectly(circleNode);
-            graphAsset.AddNodeDirectly(circleTransformNode);
-            graphAsset.AddNodeDirectly(circleFillNode);
-            graphAsset.AddNodeDirectly(circleOutlineNode);
+            graphAsset.AddNodeDirectly(ellipseNode);
+            graphAsset.AddNodeDirectly(ellipseTransformNode);
+            graphAsset.AddNodeDirectly(ellipseFillNode);
+            graphAsset.AddNodeDirectly(ellipseOutlineNode);
             graphAsset.AddNodeDirectly(composeNode);
             graphAsset.AddNodeDirectly(outputNode);
         }
@@ -179,13 +181,13 @@ namespace Galaretka.ShapeGraph.Samples.Smoke
             Connect(hexTransformNode, ShapeModifierNode.ShapeOut, hexFillNode, FillStyleNode.ShapeIn);
             Connect(hexFillNode, FillStyleNode.RegionOut, hexOutlineNode, OutlineStyleNode.RegionIn);
 
-            Connect(circleNode, ShapeGeneratorNode.ShapeOut, circleTransformNode, ShapeModifierNode.ShapeIn);
-            Connect(circleTransformNode, ShapeModifierNode.ShapeOut, circleFillNode, FillStyleNode.ShapeIn);
-            Connect(circleFillNode, FillStyleNode.RegionOut, circleOutlineNode, OutlineStyleNode.RegionIn);
+            Connect(ellipseNode, ShapeGeneratorNode.ShapeOut, ellipseTransformNode, ShapeModifierNode.ShapeIn);
+            Connect(ellipseTransformNode, ShapeModifierNode.ShapeOut, ellipseFillNode, FillStyleNode.ShapeIn);
+            Connect(ellipseFillNode, FillStyleNode.RegionOut, ellipseOutlineNode, OutlineStyleNode.RegionIn);
 
             Connect(starOutlineNode, OutlineStyleNode.RegionOut, composeNode, ComposeShapesNode.RegionAIn);
             Connect(hexOutlineNode, OutlineStyleNode.RegionOut, composeNode, ComposeShapesNode.RegionBIn);
-            Connect(circleOutlineNode, OutlineStyleNode.RegionOut, composeNode, ComposeShapesNode.RegionCIn);
+            Connect(ellipseOutlineNode, OutlineStyleNode.RegionOut, composeNode, ComposeShapesNode.RegionCIn);
 
             Connect(composeNode, ComposeShapesNode.PictureOut, outputNode, TerminalOutputNode.PictureIn);
         }
@@ -225,13 +227,14 @@ namespace Galaretka.ShapeGraph.Samples.Smoke
             hexOutlineNode.OutlineColor = polygonOutline;
             hexOutlineNode.Thickness = polygonOutlineThickness;
 
-            circleNode.Radius = circleRadius;
-            circleNode.Segments = Mathf.Max(3, circleSegments);
-            circleTransformNode.Translation = circleTranslation;
-            circleTransformNode.PivotMode = TransformPivotMode.Centroid;
-            circleFillNode.FillColor = circleFill;
-            circleOutlineNode.OutlineColor = circleOutline;
-            circleOutlineNode.Thickness = circleOutlineThickness;
+            ellipseNode.RadiusX = ellipseRadiusX;
+            ellipseNode.RadiusY = ellipseRadiusY;
+            ellipseNode.Segments = Mathf.Max(3, ellipseSegments);
+            ellipseTransformNode.Translation = ellipseTranslation;
+            ellipseTransformNode.PivotMode = TransformPivotMode.Centroid;
+            ellipseFillNode.FillColor = ellipseFill;
+            ellipseOutlineNode.OutlineColor = ellipseOutline;
+            ellipseOutlineNode.Thickness = ellipseOutlineThickness;
         }
 
         private void BindToInstance()
@@ -256,10 +259,10 @@ namespace Galaretka.ShapeGraph.Samples.Smoke
         {
             DestroyHidden(outputNode);
             DestroyHidden(composeNode);
-            DestroyHidden(circleOutlineNode);
-            DestroyHidden(circleFillNode);
-            DestroyHidden(circleTransformNode);
-            DestroyHidden(circleNode);
+            DestroyHidden(ellipseOutlineNode);
+            DestroyHidden(ellipseFillNode);
+            DestroyHidden(ellipseTransformNode);
+            DestroyHidden(ellipseNode);
             DestroyHidden(hexOutlineNode);
             DestroyHidden(hexFillNode);
             DestroyHidden(hexTransformNode);
@@ -272,10 +275,10 @@ namespace Galaretka.ShapeGraph.Samples.Smoke
 
             outputNode = null;
             composeNode = null;
-            circleOutlineNode = null;
-            circleFillNode = null;
-            circleTransformNode = null;
-            circleNode = null;
+            ellipseOutlineNode = null;
+            ellipseFillNode = null;
+            ellipseTransformNode = null;
+            ellipseNode = null;
             hexOutlineNode = null;
             hexFillNode = null;
             hexTransformNode = null;

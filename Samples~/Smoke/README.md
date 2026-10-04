@@ -5,7 +5,7 @@ Four stages: **Geometry** → **Style** (`ShapeRegion2D`) → **Picture** (`Comp
 ```
 Star → Noise → Fill → Outline ─┐
 Hex → Transform → Fill → Outline ─┼→ Compose → MeshOutput
-Circle → Transform → Fill → Outline ─┘
+Ellipse → Transform → Fill → Outline ─┘
 ```
 
 Each branch keeps its own fill + outline. Compose stacks paint order; it does not boolean.

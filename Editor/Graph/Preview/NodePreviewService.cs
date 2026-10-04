@@ -9,6 +9,8 @@ namespace Galaretka.ShapeGraph.Editor.Graph.Preview
 {
     public sealed class NodePreviewService : IDisposable
     {
+        private const float TimeQuantStep = 1f / 30f;
+
         private readonly GraphDirtyTracker dirty;
         private readonly PreviewCache cache = new();
         private readonly PreviewRenderer renderer = new();
@@ -18,6 +20,7 @@ namespace Galaretka.ShapeGraph.Editor.Graph.Preview
 
         private ShapeGraphAsset asset;
         private int seed = 1337;
+        private float timeSeconds;
         private Action<Texture> masterListener;
         private Texture masterTexture;
 
@@ -27,11 +30,13 @@ namespace Galaretka.ShapeGraph.Editor.Graph.Preview
         }
 
         public Texture MasterTexture => masterTexture;
+        public float TimeSeconds => timeSeconds;
 
-        public void Bind(ShapeGraphAsset graphAsset, int previewSeed)
+        public void Bind(ShapeGraphAsset graphAsset, int previewSeed, float previewTime = 0f)
         {
             asset = graphAsset;
             seed = previewSeed;
+            timeSeconds = previewTime;
             cache.Clear();
             dirty.InvalidateAll(asset);
             scheduler.Hook(Tick);
@@ -41,18 +46,27 @@ namespace Galaretka.ShapeGraph.Editor.Graph.Preview
                 for (int i = 0; i < asset.Nodes.Count; i++)
                 {
                     if (asset.Nodes[i] != null)
+                    {
                         scheduler.Enqueue(asset.Nodes[i].Id);
+                    }
                 }
             }
         }
 
         public void SetSeed(int previewSeed)
         {
-            if (seed == previewSeed)
-                return;
+            if (seed == previewSeed) return;
             seed = previewSeed;
             cache.Clear();
             dirty.InvalidateAll(asset);
+            RequestAll();
+        }
+
+        public void SetTime(float previewTime)
+        {
+            if (Mathf.Approximately(timeSeconds, previewTime)) return;
+            timeSeconds = previewTime;
+            // Time is in the cache key; request master + enqueue visible node rebuilds.
             RequestAll();
         }
 
@@ -104,12 +118,13 @@ namespace Galaretka.ShapeGraph.Editor.Graph.Preview
 
         private void RequestAll()
         {
-            if (asset == null)
-                return;
+            if (asset == null) return;
             for (int i = 0; i < asset.Nodes.Count; i++)
             {
                 if (asset.Nodes[i] != null)
+                {
                     scheduler.Enqueue(asset.Nodes[i].Id);
+                }
             }
             RequestMaster();
         }
@@ -118,54 +133,66 @@ namespace Galaretka.ShapeGraph.Editor.Graph.Preview
 
         private void Tick()
         {
-            if (asset == null)
-                return;
+            if (asset == null) return;
 
-            // Pull any dirties that accumulated without an explicit notify.
             if (dirty.HasPending)
+            {
                 NotifyDirtyFromTracker();
+            }
 
             scheduler.DrainFrame(frameNodes, out bool includeMaster);
 
             for (int i = 0; i < frameNodes.Count; i++)
+            {
                 RebuildNode(frameNodes[i]);
+            }
 
             if (includeMaster)
+            {
                 RebuildMaster();
+            }
         }
+
+        private int TimeQuant => Mathf.RoundToInt(timeSeconds / TimeQuantStep);
 
         private void RebuildNode(NodeId nodeId)
         {
             ShapeNode node = asset.GetNodeById(nodeId);
-            if (node == null)
-                return;
+            if (node == null) return;
 
             var key = new PreviewCacheKey(
                 nodeId,
                 node.Version,
                 dirty.StructureVersion,
                 seed,
+                TimeQuant,
                 dirty.PreviewRevision,
                 false);
 
             if (!cache.TryGet(key, out RenderTexture rt))
             {
-                PreviewEvalResult result = PreviewEvaluator.EvaluateNode(asset, node, seed);
+                PreviewEvalResult result = PreviewEvaluator.EvaluateNode(asset, node, seed, timeSeconds);
                 rt = result.Success ? renderer.Render(result.Mesh, 128) : null;
 
-                // Bind Image first, then publish to cache (cache may release the previous RT).
                 if (listeners.TryGetValue(nodeId, out Action<Texture> cb))
+                {
                     cb?.Invoke(rt);
+                }
 
                 if (rt != null)
+                {
                     cache.Set(key, rt);
+                }
                 else
+                {
                     cache.ReleaseSlot(nodeId, isMaster: false);
                 return;
             }
 
             if (listeners.TryGetValue(nodeId, out Action<Texture> cachedCb))
+            {
                 cachedCb?.Invoke(rt);
+            }
         }
 
         private void RebuildMaster()
@@ -175,21 +202,26 @@ namespace Galaretka.ShapeGraph.Editor.Graph.Preview
                 0,
                 dirty.StructureVersion,
                 seed,
+                TimeQuant,
                 dirty.PreviewRevision,
                 true);
 
             if (!cache.TryGet(key, out RenderTexture rt))
             {
-                PreviewEvalResult result = PreviewEvaluator.EvaluateMaster(asset, seed);
+                PreviewEvalResult result = PreviewEvaluator.EvaluateMaster(asset, seed, timeSeconds);
                 rt = result.Success ? renderer.Render(result.Mesh, 512) : null;
 
                 masterTexture = rt;
                 masterListener?.Invoke(rt);
 
                 if (rt != null)
+                {
                     cache.Set(key, rt);
+                }
                 else
+                {
                     cache.ReleaseSlot(default, isMaster: true);
+                }
                 return;
             }
 

@@ -23,9 +23,14 @@ namespace Galaretka.ShapeGraph.Editor.Graph
         private Image masterPreview;
         private ObjectField assetField;
         private IntegerField seedField;
+        private FloatField timeField;
+        private Button playButton;
         private Label emptyState;
         private ShapeGraphAsset boundAsset;
         private int previewSeed = 1337;
+        private float previewTime;
+        private bool timePlaying;
+        private double lastPlayEditorTime;
 
         [MenuItem("Window/Galaretka/Shape Graph Editor")]
         public static void Open()
@@ -63,11 +68,14 @@ namespace Galaretka.ShapeGraph.Editor.Graph
             }
 
             Undo.undoRedoPerformed += OnUndoRedo;
+            EditorApplication.update += OnEditorUpdate;
         }
 
         private void OnDisable()
         {
+            EditorApplication.update -= OnEditorUpdate;
             Undo.undoRedoPerformed -= OnUndoRedo;
+            timePlaying = false;
             if (commands != null)
             {
                 commands.GraphChanged -= OnGraphChanged;
@@ -116,6 +124,18 @@ namespace Galaretka.ShapeGraph.Editor.Graph
                 previews?.SetSeed(previewSeed);
             });
             toolbar.Add(seedField);
+
+            timeField = new FloatField("Time") { value = previewTime };
+            timeField.style.width = 120;
+            timeField.RegisterValueChangedCallback(evt =>
+            {
+                previewTime = Mathf.Max(0f, evt.newValue);
+                previews?.SetTime(previewTime);
+            });
+            toolbar.Add(timeField);
+
+            playButton = new Button(ToggleTimePlay) { text = "Play" };
+            toolbar.Add(playButton);
 
             toolbar.Add(new Button(() => graphView?.FrameAllNodes()) { text = "Frame" });
             toolbar.Add(new Button(() => previews?.RequestRebuildAll()) { text = "Rebuild Previews" });
@@ -173,7 +193,7 @@ namespace Galaretka.ShapeGraph.Editor.Graph
             if (commands == null || graphView == null || previews == null) return;
 
             commands.Bind(asset);
-            previews.Bind(asset, previewSeed);
+            previews.Bind(asset, previewSeed, previewTime);
             previews.SubscribeMaster(tex =>
             {
                 if (masterPreview != null)
@@ -230,6 +250,26 @@ namespace Galaretka.ShapeGraph.Editor.Graph
             emptyState.style.display = boundAsset == null || boundAsset.Nodes.Count == 0
                 ? DisplayStyle.Flex
                 : DisplayStyle.None;
+        }
+
+        private void ToggleTimePlay()
+        {
+            timePlaying = !timePlaying;
+            playButton.text = timePlaying ? "Pause" : "Play";
+            lastPlayEditorTime = EditorApplication.timeSinceStartup;
+        }
+
+        private void OnEditorUpdate()
+        {
+            if (!timePlaying || previews == null)
+                return;
+
+            double now = EditorApplication.timeSinceStartup;
+            float dt = (float)(now - lastPlayEditorTime);
+            lastPlayEditorTime = now;
+            previewTime += Mathf.Max(0f, dt);
+            timeField?.SetValueWithoutNotify(previewTime);
+            previews.SetTime(previewTime);
         }
 
         private static void PersistSessionAsset(ShapeGraphAsset asset)

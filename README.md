@@ -4,14 +4,21 @@ Node-based procedural 2D vector mesh and collider generator for Unity 6 with det
 
 ## Four stages
 
-1. **Geometry** (`IShape2D`) — generators, modifiers, boolean Union/Difference on bare silhouettes only.
-2. **Style** (`ShapeRegion2D`) — Fill (+ optional Outline params). Declarative paint; no triangulation yet.
+1. **Geometry** (`IShape2D`) — generators, modifiers, boolean Union/Difference/Intersection on bare silhouettes only.
+2. **Style** (`ShapeRegion2D`) — Fill, Outline, Tint, Opacity. Declarative paint; no triangulation yet.
 3. **Picture** (`ShapePicture2D`) — Compose ordered layers for multi-color authorship.
 4. **Bake** — `ShapeBake` at Mesh Output (and editor previews) produces one `GeneratedMeshData`.
 
 Boolean never accepts styled regions. Multi-color means multiple regions in a picture, not “union then hope”.
 
-**Parameters** are a Value layer: author them in the graph editor (or asset inspector), wire with `Values/Parameter`, and override Exposed values on `ProceduralShapeInstance`. RandomRange is seed-driven.
+**Parameters** are a Value layer: author them in the graph editor, wire with `Values/Parameter`, override Exposed on `ProceduralShapeInstance`. **Time** + **Math** nodes animate scalars (editor Time Play / Play Mode `Time.time`).
+
+## Node library (short)
+
+- Generators: Regular Polygon, Star, Rectangle, Ellipse, Capsule, Ring  
+- Modifiers: Transform, Offset, Inflate, Noise, Mirror, Shear, Twist, Polar Displace  
+- Values: Parameter, Time, Math/*, Vector2/*  
+- Style: Fill, Outline, Tint, Opacity · Combine: Union, Difference, Intersection, Compose
 
 ## Graph editor
 
@@ -30,5 +37,5 @@ Runtime never depends on the Editor assembly. Bake static objects with `ShapeBak
 
 Import **Smoke Demo** from Package Manager:
 
-`Star/Hex/Circle` → Fill → Outline → `Compose` → Mesh Output (three colors).  
+`Star/Hex/Ellipse` → Fill → Outline → `Compose` → Mesh Output (three colors).  
 Alternate: `Union(bare A,B)` → Fill → Outline → Mesh Output → **one** fill color.

@@ -33,13 +33,13 @@ namespace Galaretka.ShapeGraph.Editor.Graph.Preview
         private static readonly List<NodePort> PortBuffer = new(16);
         private static readonly List<Polygon2D> PolygonBuffer = new(8);
 
-        public static PreviewEvalResult EvaluateNode(ShapeGraphAsset asset, ShapeNode node, int seed)
+        public static PreviewEvalResult EvaluateNode(ShapeGraphAsset asset, ShapeNode node, int seed, float timeSeconds = 0f)
         {
             if (asset == null || node == null) return PreviewEvalResult.Failed("Missing asset or node.");
 
             try
             {
-                var context = new ShapeContext(seed);
+                var context = new ShapeContext(seed, null, timeSeconds);
 
                 if (node is TerminalOutputNode terminal)
                 {
@@ -89,13 +89,13 @@ namespace Galaretka.ShapeGraph.Editor.Graph.Preview
             }
         }
 
-        public static PreviewEvalResult EvaluateMaster(ShapeGraphAsset asset, int seed)
+        public static PreviewEvalResult EvaluateMaster(ShapeGraphAsset asset, int seed, float timeSeconds = 0f)
         {
             if (asset == null) return PreviewEvalResult.Failed("Missing asset.");
 
             try
             {
-                var context = new ShapeContext(seed);
+                var context = new ShapeContext(seed, null, timeSeconds);
                 GeneratedMeshData data = asset.Evaluate(context);
                 bool ok = data.Vertices != null && data.Vertices.Length >= 3;
                 return new PreviewEvalResult(data, ok, ok ? null : "Terminal produced empty mesh.");

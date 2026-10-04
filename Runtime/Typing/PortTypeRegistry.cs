@@ -16,6 +16,7 @@ namespace Galaretka.ShapeGraph.Typing
             GetOrRegister(typeof(IShape2D));
             GetOrRegister(typeof(Polygon2D));
             GetOrRegister(typeof(Circle2D));
+            GetOrRegister(typeof(Ellipse2D));
             GetOrRegister(typeof(RegularPolygon2D));
             GetOrRegister(typeof(Star2D));
             GetOrRegister(typeof(MultiPolygon2D));

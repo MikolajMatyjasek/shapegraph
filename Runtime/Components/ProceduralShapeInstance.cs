@@ -101,6 +101,15 @@ namespace Galaretka.ShapeGraph.Components
             Rebuild();
         }
 
+        private void Update()
+        {
+            // Time.time drives Values/Time; rebuild each frame in Play Mode.
+            if (Application.isPlaying && graphAsset != null)
+            {
+                Rebuild();
+            }
+        }
+
         private void OnDisable() => UnsubscribeGraph();
 
         private void OnDestroy() => UnsubscribeGraph();
@@ -174,7 +183,7 @@ namespace Galaretka.ShapeGraph.Components
             }
 
             Dictionary<ParameterId, ParameterValue> overrideMap = BuildOverrideMap();
-            var context = new ShapeContext(seed, overrideMap);
+            var context = new ShapeContext(seed, overrideMap, Time.time);
             GeneratedMeshData meshData = graphAsset.Evaluate(context);
 
             EnsureRuntimeMesh();

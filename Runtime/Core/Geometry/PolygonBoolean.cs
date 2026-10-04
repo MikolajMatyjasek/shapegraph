@@ -134,11 +134,45 @@ namespace Galaretka.ShapeGraph.Core.Geometry
         public static bool TryDifference(Polygon2D subject, Polygon2D clip, out IShape2D result) =>
             TryDifference((IShape2D)subject, clip, out result);
 
-        internal static bool TryIntersect(Polygon2D a, Polygon2D b, out IShape2D result)
+        public static bool TryIntersection(IShape2D a, IShape2D b, out IShape2D result)
         {
             result = null;
-            Debug.LogWarning("[ShapeGraph] PolygonBoolean.Intersect is not supported in this release.");
-            return false;
+            if (a == null || b == null) return false;
+
+            var subjects = new List<Polygon2D>(4);
+            var clips = new List<Polygon2D>(4);
+            CollectPolygons(a, subjects);
+            CollectPolygons(b, clips);
+            if (subjects.Count == 0 || clips.Count == 0) return false;
+
+            try
+            {
+                var hits = new List<Polygon2D>();
+                for (int s = 0; s < subjects.Count; s++)
+                {
+                    for (int c = 0; c < clips.Count; c++)
+                    {
+                        if (PolygonClipper2D.TryClip(
+                                subjects[s],
+                                clips[c],
+                                PolygonClipper2D.ClipOp.Intersection,
+                                out List<Polygon2D> piece) &&
+                            piece.Count > 0)
+                        {
+                            hits.AddRange(piece);
+                        }
+                    }
+                }
+
+                if (hits.Count == 0) return false;
+                result = MultiPolygon2D.FromPolygons(hits);
+                return result != null;
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogWarning($"[ShapeGraph] PolygonBoolean.Intersection failed: {ex.Message}");
+                return false;
+            }
         }
 
         private static bool TryUnionInto(List<Polygon2D> acc, Polygon2D next)

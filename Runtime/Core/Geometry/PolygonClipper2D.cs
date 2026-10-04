@@ -10,7 +10,8 @@ namespace Galaretka.ShapeGraph.Core.Geometry
         internal enum ClipOp
         {
             Union = 0,
-            Difference = 1
+            Difference = 1,
+            Intersection = 2
         }
 
         public static bool TryClip(Polygon2D subject, Polygon2D clip, ClipOp op, out List<Polygon2D> results)
@@ -30,6 +31,8 @@ namespace Galaretka.ShapeGraph.Core.Geometry
                     results.Add(b);
                     return true;
                 }
+
+                if (op == ClipOp.Intersection) return false;
 
                 results.Add(a);
                 return true;
@@ -62,6 +65,23 @@ namespace Galaretka.ShapeGraph.Core.Geometry
                     }
 
                     return results.Count > 0;
+                }
+
+                if (op == ClipOp.Intersection)
+                {
+                    if (aInsideB)
+                    {
+                        results.Add(a);
+                        return true;
+                    }
+
+                    if (bInsideA)
+                    {
+                        results.Add(b);
+                        return true;
+                    }
+
+                    return false;
                 }
 
                 if (aInsideB) return false;
@@ -240,6 +260,7 @@ namespace Galaretka.ShapeGraph.Core.Geometry
                             current.Neighbor.Processed = true;
                         }
 
+                        // Union follows exterior; Difference and Intersection follow interior entries.
                         bool walkForward = op == ClipOp.Union ? !current.IsEntry : current.IsEntry;
                         Vertex next = walkForward ? current.Next : current.Prev;
 

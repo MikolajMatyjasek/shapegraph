@@ -10,15 +10,24 @@ namespace Galaretka.ShapeGraph.Editor.Graph.Preview
         public readonly uint NodeVersion;
         public readonly uint StructureVersion;
         public readonly int Seed;
+        public readonly int TimeQuant;
         public readonly uint PreviewRevision;
         public readonly bool IsMaster;
 
-        public PreviewCacheKey(NodeId nodeId, uint nodeVersion, uint structureVersion, int seed, uint previewRevision, bool isMaster)
+        public PreviewCacheKey(
+            NodeId nodeId,
+            uint nodeVersion,
+            uint structureVersion,
+            int seed,
+            int timeQuant,
+            uint previewRevision,
+            bool isMaster)
         {
             NodeId = nodeId;
             NodeVersion = nodeVersion;
             StructureVersion = structureVersion;
             Seed = seed;
+            TimeQuant = timeQuant;
             PreviewRevision = previewRevision;
             IsMaster = isMaster;
         }
@@ -28,6 +37,7 @@ namespace Galaretka.ShapeGraph.Editor.Graph.Preview
             NodeVersion == other.NodeVersion &&
             StructureVersion == other.StructureVersion &&
             Seed == other.Seed &&
+            TimeQuant == other.TimeQuant &&
             PreviewRevision == other.PreviewRevision &&
             IsMaster == other.IsMaster;
 
@@ -41,6 +51,7 @@ namespace Galaretka.ShapeGraph.Editor.Graph.Preview
                 hash = (hash * 397) ^ (int)NodeVersion;
                 hash = (hash * 397) ^ (int)StructureVersion;
                 hash = (hash * 397) ^ Seed;
+                hash = (hash * 397) ^ TimeQuant;
                 hash = (hash * 397) ^ (int)PreviewRevision;
                 hash = (hash * 397) ^ (IsMaster ? 1 : 0);
                 return hash;
@@ -48,10 +59,6 @@ namespace Galaretka.ShapeGraph.Editor.Graph.Preview
         }
     }
 
-    /// <summary>
-    /// One live RT slot per node (plus master). Replaces in place so we never
-    /// destroy a texture still bound to a node Image via LRU eviction.
-    /// </summary>
     public sealed class PreviewCache
     {
         private const string MasterSlot = "__master__";
@@ -99,10 +106,6 @@ namespace Galaretka.ShapeGraph.Editor.Graph.Preview
             };
         }
 
-        /// <summary>
-        /// Marks slots stale so the next rebuild regenerates. Keeps RTs alive until
-        /// <see cref="Set"/> replaces them (avoids blank Images while queued).
-        /// </summary>
         public void InvalidateNode(NodeId nodeId)
         {
             MarkStale(SlotOfNode(nodeId, isMaster: false));
@@ -112,8 +115,7 @@ namespace Galaretka.ShapeGraph.Editor.Graph.Preview
         public void ReleaseSlot(NodeId nodeId, bool isMaster)
         {
             string slot = SlotOfNode(nodeId, isMaster);
-            if (!slots.TryGetValue(slot, out Entry entry))
-                return;
+            if (!slots.TryGetValue(slot, out Entry entry)) return;
 
             Release(entry.Rt);
             slots.Remove(slot);
@@ -122,14 +124,15 @@ namespace Galaretka.ShapeGraph.Editor.Graph.Preview
         public void Clear()
         {
             foreach (var kv in slots)
+            {
                 Release(kv.Value.Rt);
+            }
             slots.Clear();
         }
 
         private void MarkStale(string slot)
         {
-            if (!slots.TryGetValue(slot, out Entry entry))
-                return;
+            if (!slots.TryGetValue(slot, out Entry entry)) return;
 
             entry.HasFingerprint = false;
             slots[slot] = entry;
@@ -142,8 +145,7 @@ namespace Galaretka.ShapeGraph.Editor.Graph.Preview
 
         private static void Release(RenderTexture rt)
         {
-            if (rt == null)
-                return;
+            if (rt == null) return;
             rt.Release();
             Object.DestroyImmediate(rt);
         }
