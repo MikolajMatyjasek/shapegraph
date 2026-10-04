@@ -5,7 +5,9 @@ using Galaretka.ShapeGraph.Core;
 using Galaretka.ShapeGraph.Data;
 using Galaretka.ShapeGraph.Editor.Graph.Commands;
 using Galaretka.ShapeGraph.Editor.Graph.Preview;
+using Galaretka.ShapeGraph.Editor.Graph.Search;
 using Galaretka.ShapeGraph.Editor.Graph.Views;
+using Galaretka.ShapeGraph.Typing;
 using UnityEditor;
 using UnityEditor.Experimental.GraphView;
 using UnityEngine;
@@ -22,6 +24,8 @@ namespace Galaretka.ShapeGraph.Editor.Graph
         private bool suppressGraphChanges;
 
         public event Action<ShapeNode> SelectionChanged;
+
+        public ShapeGraphAsset CommandsAsset => commands.Asset;
 
         public ShapeGraphView(GraphCommandService commandService, NodePreviewService previewService)
         {
@@ -111,7 +115,22 @@ namespace Galaretka.ShapeGraph.Editor.Graph
             evt.menu.AppendAction("Create Node", _ => OpenSearchAtLocal(local));
         }
 
-        public void OnDropOutsidePort(Edge edge, Vector2 position) { }
+        public void OnDropOutsidePort(Edge edge, Vector2 position)
+        {
+            if (edge?.output is not ShapeGraphPortView outputPort)
+                return;
+            if (outputPort.node is not ShapeGraphNodeView fromView || fromView.RuntimeNode == null)
+                return;
+            if (!PortTypeRegistry.TryResolve(outputPort.ShapePortTypeId, out Type fromType) || fromType == null)
+                return;
+
+            Vector2 local = contentViewContainer.WorldToLocal(position);
+            OpenFilteredSearchFromOutput(
+                local,
+                fromType,
+                fromView.RuntimeNodeId,
+                outputPort.ShapePortId);
+        }
 
         public void OnDrop(GraphView graphView, Edge edge)
         {
@@ -125,8 +144,37 @@ namespace Galaretka.ShapeGraph.Editor.Graph
 
         public ShapeNode CreateNodeAt(Type type, Vector2 graphPosition)
         {
-            ShapeNode node = commands.CreateNode(type, graphPosition);
-            return node;
+            return commands.CreateNode(type, graphPosition);
+        }
+
+        public ShapeNode CreateNodeFromRequest(CreateNodeRequest request, Vector2 graphPosition)
+        {
+            if (request.IsParameter)
+                return commands.CreateParameterNode(request.BindParameter, graphPosition);
+            return commands.CreateNode(request.NodeType, graphPosition);
+        }
+
+        public bool CreateNodeFromOutputDrop(
+            CreateNodeRequest request,
+            Vector2 graphPosition,
+            NodeId fromNode,
+            PortId fromPort,
+            Type fromOutputType)
+        {
+            if (!NodePortSignatureCache.TryFindFirstCompatibleInput(
+                    request.NodeType,
+                    fromOutputType,
+                    out PortId toPort))
+                return false;
+
+            ShapeNode created = commands.CreateNodeAndConnect(
+                request.NodeType,
+                request.BindParameter,
+                graphPosition,
+                fromNode,
+                fromPort,
+                toPort);
+            return created != null;
         }
 
         public void FrameAllNodes() => FrameAll();
@@ -152,7 +200,8 @@ namespace Galaretka.ShapeGraph.Editor.Graph
         private void AddNodeView(ShapeNode node)
         {
             var view = new ShapeGraphNodeView(node, this);
-            view.BindPreview(previews);
+            if (view.IsPreviewable)
+                view.BindPreview(previews);
             nodeViews[node.Id] = view;
             AddElement(view);
         }
@@ -233,11 +282,37 @@ namespace Galaretka.ShapeGraph.Editor.Graph
 
         private void OpenSearchAtLocal(Vector2 localGraphPosition)
         {
+            EnsureSearchWindow();
+            searchWindow.Initialize(this, localGraphPosition);
+            OpenSearchWindow();
+        }
+
+        private void OpenFilteredSearchFromOutput(
+            Vector2 localGraphPosition,
+            Type fromOutputType,
+            NodeId fromNode,
+            PortId fromPort)
+        {
+            EnsureSearchWindow();
+            searchWindow.InitializeFilteredFromOutput(
+                this,
+                localGraphPosition,
+                fromOutputType,
+                fromNode,
+                fromPort);
+            OpenSearchWindow();
+        }
+
+        private void EnsureSearchWindow()
+        {
             if (searchWindow == null)
                 searchWindow = ScriptableObject.CreateInstance<ShapeNodeSearchWindow>();
+        }
 
-            searchWindow.Initialize(this, localGraphPosition);
-            Vector2 screen = GUIUtility.GUIToScreenPoint(Event.current != null ? Event.current.mousePosition : localGraphPosition);
+        private void OpenSearchWindow()
+        {
+            Vector2 screen = GUIUtility.GUIToScreenPoint(
+                Event.current != null ? Event.current.mousePosition : Vector2.zero);
             SearchWindow.Open(new SearchWindowContext(screen), searchWindow);
         }
 

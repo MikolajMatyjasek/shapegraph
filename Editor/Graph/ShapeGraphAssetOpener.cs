@@ -32,8 +32,8 @@ namespace Galaretka.ShapeGraph.Editor.Graph
             EditorGUILayout.Space(6);
             EditorGUILayout.LabelField("Parameters", EditorStyles.boldLabel);
             EditorGUILayout.HelpBox(
-                "Constant / Exposed / RandomRange. Wire via Values/Parameter in the graph editor. " +
-                "Topology is edited only in the graph editor.",
+                "Constant / Exposed / RandomRange. Add parameters here or in the graph panel, " +
+                "then create them from search under Parameters/. Topology is edited only in the graph editor.",
                 MessageType.None);
 
             EditorGUI.BeginChangeCheck();

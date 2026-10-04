@@ -146,6 +146,10 @@ namespace Galaretka.ShapeGraph.Editor.Graph.Preview
         private static void Release(RenderTexture rt)
         {
             if (rt == null) return;
+            if (RenderTexture.active == rt)
+            {
+                RenderTexture.active = null;
+            }
             rt.Release();
             Object.DestroyImmediate(rt);
         }

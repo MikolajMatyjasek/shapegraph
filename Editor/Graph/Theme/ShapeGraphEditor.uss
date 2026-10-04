@@ -86,6 +86,10 @@ ShapeGraphView {
     background-color: rgb(40, 43, 50);
 }
 
+.shape-graph-node.parameter-node {
+    min-width: 120px;
+}
+
 .shape-graph-node.domain-geometry {
     border-color: rgb(70, 110, 170);
 }

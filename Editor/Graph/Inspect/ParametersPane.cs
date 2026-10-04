@@ -74,7 +74,9 @@ namespace Galaretka.ShapeGraph.Editor.Graph.Inspect
             IReadOnlyList<GraphParameter> list = asset.Parameters;
             if (list.Count == 0)
             {
-                EditorGUILayout.HelpBox("No parameters. Add one to drive Values/Parameter nodes.", MessageType.None);
+                EditorGUILayout.HelpBox(
+                    "No parameters. Add one, then create it from the graph search under Parameters/.",
+                    MessageType.None);
                 return;
             }
 

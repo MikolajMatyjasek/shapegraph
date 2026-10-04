@@ -6,7 +6,6 @@ using UnityEngine;
 
 namespace Galaretka.ShapeGraph.Data.Nodes.Values
 {
-    [NodeMenu("Values/Parameter")]
     public sealed class ParameterNode : ShapeNode
     {
         public static readonly PortId ValueOut = new("Value Out");
@@ -24,6 +23,10 @@ namespace Galaretka.ShapeGraph.Data.Nodes.Values
         {
             parameterName = name ?? string.Empty;
             outputType = type;
+            if (!string.IsNullOrEmpty(parameterName))
+            {
+                this.name = parameterName;
+            }
             MarkDirty();
         }
 
@@ -56,7 +59,6 @@ namespace Galaretka.ShapeGraph.Data.Nodes.Values
         {
             if (graph == null || string.IsNullOrEmpty(parameterName))
             {
-                Debug.LogWarning($"[ShapeGraph] ParameterNode '{name}' has no parameter bound.");
                 return ParameterValue.DefaultFor(outputType);
             }
 

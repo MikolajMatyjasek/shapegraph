@@ -40,17 +40,8 @@ namespace Galaretka.ShapeGraph.Editor.Graph.Preview
             cache.Clear();
             dirty.InvalidateAll(asset);
             scheduler.Hook(Tick);
+            // Node rebuilds enqueue on Subscribe; only master is requested here.
             RequestMaster();
-            if (asset != null)
-            {
-                for (int i = 0; i < asset.Nodes.Count; i++)
-                {
-                    if (asset.Nodes[i] != null)
-                    {
-                        scheduler.Enqueue(asset.Nodes[i].Id);
-                    }
-                }
-            }
         }
 
         public void SetSeed(int previewSeed)
@@ -98,7 +89,10 @@ namespace Galaretka.ShapeGraph.Editor.Graph.Preview
             for (int i = 0; i < pending.Count; i++)
             {
                 cache.InvalidateNode(pending[i]);
-                scheduler.Enqueue(pending[i]);
+                if (listeners.ContainsKey(pending[i]))
+                {
+                    scheduler.Enqueue(pending[i]);
+                }
             }
 
             if (dirty.ConsumeMasterDirty())
@@ -119,12 +113,9 @@ namespace Galaretka.ShapeGraph.Editor.Graph.Preview
         private void RequestAll()
         {
             if (asset == null) return;
-            for (int i = 0; i < asset.Nodes.Count; i++)
+            foreach (NodeId nodeId in listeners.Keys)
             {
-                if (asset.Nodes[i] != null)
-                {
-                    scheduler.Enqueue(asset.Nodes[i].Id);
-                }
+                scheduler.Enqueue(nodeId);
             }
             RequestMaster();
         }
@@ -157,6 +148,8 @@ namespace Galaretka.ShapeGraph.Editor.Graph.Preview
 
         private void RebuildNode(NodeId nodeId)
         {
+            if (!listeners.ContainsKey(nodeId)) return;
+
             ShapeNode node = asset.GetNodeById(nodeId);
             if (node == null) return;
 
@@ -175,24 +168,17 @@ namespace Galaretka.ShapeGraph.Editor.Graph.Preview
                 rt = result.Success ? renderer.Render(result.Mesh, 128) : null;
 
                 if (listeners.TryGetValue(nodeId, out Action<Texture> cb))
-                {
                     cb?.Invoke(rt);
-                }
 
                 if (rt != null)
-                {
                     cache.Set(key, rt);
-                }
                 else
-                {
                     cache.ReleaseSlot(nodeId, isMaster: false);
                 return;
             }
 
             if (listeners.TryGetValue(nodeId, out Action<Texture> cachedCb))
-            {
                 cachedCb?.Invoke(rt);
-            }
         }
 
         private void RebuildMaster()

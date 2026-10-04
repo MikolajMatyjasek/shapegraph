@@ -23,9 +23,6 @@ namespace Galaretka.ShapeGraph.Editor.Graph.Search
         }
     }
 
-    /// <summary>
-    /// Discovers concrete <see cref="ShapeNode"/> types annotated with <see cref="NodeMenuAttribute"/>.
-    /// </summary>
     public static class NodeTypeCatalog
     {
         private static List<NodeTypeEntry> cached;
@@ -33,17 +30,17 @@ namespace Galaretka.ShapeGraph.Editor.Graph.Search
         public static IReadOnlyList<NodeTypeEntry> GetEntries()
         {
             if (cached != null)
+            {
                 return cached;
+            }
 
             cached = new List<NodeTypeEntry>();
             foreach (Type type in TypeCache.GetTypesWithAttribute<NodeMenuAttribute>())
             {
-                if (type.IsAbstract || !typeof(ShapeNode).IsAssignableFrom(type))
-                    continue;
+                if (type.IsAbstract || !typeof(ShapeNode).IsAssignableFrom(type)) continue;
 
                 var attr = (NodeMenuAttribute)Attribute.GetCustomAttribute(type, typeof(NodeMenuAttribute));
-                if (attr == null || string.IsNullOrEmpty(attr.Path))
-                    continue;
+                if (attr == null || string.IsNullOrEmpty(attr.Path)) continue;
 
                 cached.Add(new NodeTypeEntry(type, attr.Path));
             }
@@ -52,6 +49,10 @@ namespace Galaretka.ShapeGraph.Editor.Graph.Search
             return cached;
         }
 
-        public static void ClearCache() => cached = null;
+        public static void ClearCache()
+        {
+            cached = null;
+            NodePortSignatureCache.ClearCache();
+        }
     }
 }

@@ -111,13 +111,16 @@ namespace Galaretka.ShapeGraph.Editor.Graph.Inspect
             if (next <= 0)
             {
                 node.BindParameter(string.Empty, ParameterValueType.Float);
+                node.name = nameof(ParameterNode);
             }
             else
             {
                 node.BindParameter(names[next], types[next]);
+                node.name = names[next];
             }
 
             EditorUtility.SetDirty(node);
+            titleLabel.text = ObjectNames.NicifyVariableName(node.name);
             if (node.OutputType != before)
             {
                 commands.NotifyNodePortsChanged(node);

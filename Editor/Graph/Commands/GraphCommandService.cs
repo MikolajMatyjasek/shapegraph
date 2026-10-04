@@ -50,6 +50,10 @@ namespace Galaretka.ShapeGraph.Editor.Graph.Commands
         {
             if (asset == null) throw new InvalidOperationException("[ShapeGraph] No graph asset bound.");
             if (nodeType == null || !typeof(ShapeNode).IsAssignableFrom(nodeType) || nodeType.IsAbstract) throw new ArgumentException("Invalid node type.", nameof(nodeType));
+            if (nodeType == typeof(ParameterNode))
+            {
+                throw new ArgumentException("Use CreateParameterNode for ParameterNode.", nameof(nodeType));
+            }
 
             Undo.RegisterCompleteObjectUndo(asset, "Shape Graph Create Node");
 
@@ -65,6 +69,98 @@ namespace Galaretka.ShapeGraph.Editor.Graph.Commands
             asset.AddNodeDirectly(node);
             PersistAsset(node);
             dirtyTracker.BumpStructure();
+            RaiseChanged(GraphChangeKind.Structure);
+            return node;
+        }
+
+        public ParameterNode CreateParameterNode(GraphParameter parameter, Vector2 graphPosition)
+        {
+            if (asset == null) throw new InvalidOperationException("[ShapeGraph] No graph asset bound.");
+            if (parameter == null) throw new ArgumentNullException(nameof(parameter));
+
+            Undo.RegisterCompleteObjectUndo(asset, "Shape Graph Create Parameter Node");
+
+            var node = ScriptableObject.CreateInstance<ParameterNode>();
+            node.hideFlags = HideFlags.HideInHierarchy;
+            node.GraphPosition = graphPosition;
+            node.OnEnable();
+            node.BindParameter(parameter.Name, parameter.ValueType);
+
+            AssetDatabase.AddObjectToAsset(node, asset);
+            Undo.RegisterCreatedObjectUndo(node, "Shape Graph Create Parameter Node");
+
+            asset.AddNodeDirectly(node);
+            PersistAsset(node);
+            dirtyTracker.BumpStructure();
+            RaiseChanged(GraphChangeKind.Structure);
+            return node;
+        }
+
+        public ShapeNode CreateNodeAndConnect(
+            Type nodeType,
+            GraphParameter bindParameter,
+            Vector2 graphPosition,
+            NodeId fromNode,
+            PortId fromPort,
+            PortId toPort)
+        {
+            if (asset == null) throw new InvalidOperationException("[ShapeGraph] No graph asset bound.");
+            if (bindParameter == null)
+            {
+                if (nodeType == null || !typeof(ShapeNode).IsAssignableFrom(nodeType) || nodeType.IsAbstract)
+                {
+                    throw new ArgumentException("Invalid node type.", nameof(nodeType));
+                }
+                if (nodeType == typeof(ParameterNode))
+                {
+                    throw new ArgumentException("Use bindParameter for ParameterNode.", nameof(nodeType));
+                }
+            }
+
+            Undo.IncrementCurrentGroup();
+            int undoGroup = Undo.GetCurrentGroup();
+            Undo.SetCurrentGroupName("Shape Graph Create And Connect");
+            Undo.RegisterCompleteObjectUndo(asset, "Shape Graph Create And Connect");
+
+            ShapeNode node;
+            if (bindParameter != null)
+            {
+                var parameterNode = ScriptableObject.CreateInstance<ParameterNode>();
+                parameterNode.hideFlags = HideFlags.HideInHierarchy;
+                parameterNode.GraphPosition = graphPosition;
+                parameterNode.OnEnable();
+                parameterNode.BindParameter(bindParameter.Name, bindParameter.ValueType);
+                node = parameterNode;
+            }
+            else
+            {
+                node = (ShapeNode)ScriptableObject.CreateInstance(nodeType);
+                node.name = nodeType.Name;
+                node.hideFlags = HideFlags.HideInHierarchy;
+                node.GraphPosition = graphPosition;
+                node.OnEnable();
+            }
+
+            AssetDatabase.AddObjectToAsset(node, asset);
+            Undo.RegisterCreatedObjectUndo(node, "Shape Graph Create And Connect");
+            asset.AddNodeDirectly(node);
+
+            var connection = new NodeConnection(fromNode, fromPort, node.Id, toPort);
+            if (!asset.AddConnectionDirectly(connection))
+            {
+                asset.RemoveNodeDirectly(node);
+                Undo.DestroyObjectImmediate(node);
+                Undo.CollapseUndoOperations(undoGroup);
+                PersistAsset();
+                dirtyTracker.BumpStructure();
+                RaiseChanged(GraphChangeKind.Structure);
+                return null;
+            }
+
+            PersistAsset(node);
+            dirtyTracker.BumpStructure();
+            dirtyTracker.InvalidateNode(node.Id, asset);
+            Undo.CollapseUndoOperations(undoGroup);
             RaiseChanged(GraphChangeKind.Structure);
             return node;
         }
@@ -205,6 +301,7 @@ namespace Galaretka.ShapeGraph.Editor.Graph.Commands
                 if (parameterNode.ParameterName != previousName && parameterNode.ParameterName != param.Name) continue;
 
                 parameterNode.BindParameter(param.Name, param.ValueType);
+                parameterNode.name = param.Name;
                 EditorUtility.SetDirty(parameterNode);
             }
         }
