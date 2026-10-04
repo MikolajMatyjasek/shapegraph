@@ -1,13 +1,16 @@
 # Shape Graph — Smoke Sample
 
-**Geometry domain** (`IShape2D`): compose silhouettes with generators, modifiers, and boolean Union.  
-**Mesh domain** (`ShapeMesh2D`): cross once via Fill, then Outline (and optional mesh ops), then Mesh Output.
+Four stages: **Geometry** → **Style** (`ShapeRegion2D`) → **Picture** (`Compose`) → **Bake** (`ShapeBake` at Mesh Output).
 
 ```
-Star → Noise ─┐
-Hex → Transform ─┼→ Union → FillMesh → OutlineMesh → MeshOutput
-Circle → Transform ─┘
+Star → Noise → Fill → Outline ─┐
+Hex → Transform → Fill → Outline ─┼→ Compose → MeshOutput
+Circle → Transform → Fill → Outline ─┘
 ```
+
+Each branch keeps its own fill + outline. Compose stacks paint order; it does not boolean.
+
+Alternate authorship path (single silhouette color): `Union(bare A,B)` → Fill → Outline → Mesh Output.
 
 1. Import the sample from Package Manager.
 2. Add `Shape Graph Smoke Demo` to a GameObject.

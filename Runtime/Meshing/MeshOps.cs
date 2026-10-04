@@ -141,7 +141,7 @@ namespace Galaretka.ShapeGraph.Meshing
             };
         }
 
-        private static ShapeMesh2D Concatenate(List<ShapeMesh2D> parts)
+        public static ShapeMesh2D Concatenate(IReadOnlyList<ShapeMesh2D> parts)
         {
             if (parts == null || parts.Count == 0) return null;
             if (parts.Count == 1) return parts[0];

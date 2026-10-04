@@ -1,22 +1,21 @@
 using System.Collections.Generic;
 using Galaretka.ShapeGraph.Core;
 using Galaretka.ShapeGraph.Evaluation;
-using Galaretka.ShapeGraph.Meshing;
 using UnityEngine;
 
-namespace Galaretka.ShapeGraph.Data.Nodes.Mesh
+namespace Galaretka.ShapeGraph.Data.Nodes.Style
 {
-    [NodeMenu("Mesh/Outline")]
-    public sealed class OutlineMeshNode : ShapeNode
+    [NodeMenu("Style/Outline")]
+    public sealed class OutlineStyleNode : ShapeNode
     {
-        public static readonly PortId MeshIn = new("Mesh In");
+        public static readonly PortId RegionIn = new("Region In");
         public static readonly PortId OutlineColorIn = new("Outline Color");
         public static readonly PortId ThicknessIn = new("Thickness");
-        public static readonly PortId MeshOut = new("Mesh Out");
+        public static readonly PortId RegionOut = new("Region Out");
 
-        [SerializeField] 
+        [SerializeField]
         private Color32 outlineColor = new Color32(20, 24, 36, 255);
-        [SerializeField] 
+        [SerializeField]
         private float thickness = 0.05f;
 
         public Color32 OutlineColor
@@ -33,22 +32,27 @@ namespace Galaretka.ShapeGraph.Data.Nodes.Mesh
 
         public override void CollectPorts(List<NodePort> ports)
         {
-            ports.Add(new NodePort(MeshIn, "Mesh In", PortDirection.Input, typeof(ShapeMesh2D)));
+            ports.Add(new NodePort(RegionIn, "Region In", PortDirection.Input, typeof(ShapeRegion2D)));
             ports.Add(new NodePort(OutlineColorIn, "Outline Color", PortDirection.Input, typeof(Color32)));
             ports.Add(new NodePort(ThicknessIn, "Thickness", PortDirection.Input, typeof(float)));
-            ports.Add(new NodePort(MeshOut, "Mesh Out", PortDirection.Output, typeof(ShapeMesh2D)));
+            ports.Add(new NodePort(RegionOut, "Region Out", PortDirection.Output, typeof(ShapeRegion2D)));
         }
 
-        protected override ShapeMesh2D ComputeMesh(PortId portId, ShapeContext context, ShapeGraphAsset graph)
+        protected override IShape2D ComputeShape(PortId portId, ShapeContext context, ShapeGraphAsset graph)
         {
-            if (portId != MeshOut) return null;
+            if (portId != RegionOut) return null;
 
-            ShapeMesh2D source = GetInputMesh(MeshIn, context, graph);
-            if (source == null || !source.IsValid) return null;
+            IShape2D input = GetInputShape(RegionIn, context, graph);
+            if (input is not ShapeRegion2D region || region.Geometry == null) return null;
 
             Color32 color = GetInputColor32(OutlineColorIn, context, graph, outlineColor);
             float resolvedThickness = ResolveFloat(ThicknessIn, context, graph, thickness);
-            return MeshOps.AppendOutline(source, resolvedThickness, color);
+
+            var result = (ShapeRegion2D)region.CloneShape();
+            result.HasOutline = resolvedThickness > 0.0001f;
+            result.OutlineColor = color;
+            result.OutlineThickness = resolvedThickness;
+            return result;
         }
     }
 }

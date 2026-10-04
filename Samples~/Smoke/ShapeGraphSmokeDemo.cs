@@ -3,9 +3,9 @@ using Galaretka.ShapeGraph.Core;
 using Galaretka.ShapeGraph.Data;
 using Galaretka.ShapeGraph.Data.Nodes.Combine;
 using Galaretka.ShapeGraph.Data.Nodes.Generators;
-using Galaretka.ShapeGraph.Data.Nodes.Mesh;
 using Galaretka.ShapeGraph.Data.Nodes.Modifiers;
 using Galaretka.ShapeGraph.Data.Nodes.Output;
+using Galaretka.ShapeGraph.Data.Nodes.Style;
 using Galaretka.ShapeGraph.Data.Patterns;
 using UnityEngine;
 using UnityEngine.Serialization;
@@ -18,63 +18,77 @@ namespace Galaretka.ShapeGraph.Samples.Smoke
     public sealed class ShapeGraphSmokeDemo : MonoBehaviour
     {
         [Header("Instance")]
-        [SerializeField] 
+        [SerializeField]
         private int seed = 1337;
 
-        [Header("Mesh look")]
-        [SerializeField] 
-        private Color32 fillColor = new Color32(160, 170, 190, 255);
-        [SerializeField] 
-        private Color32 outlineColor = new Color32(20, 24, 36, 255);
-        [SerializeField] 
-        private float outlineThickness = 0.05f;
-
         [Header("Star branch")]
-        [SerializeField] 
+        [SerializeField]
         private float starOuter = 0.55f;
-        [SerializeField] 
+        [SerializeField]
         private float starInner = 0.22f;
-        [SerializeField] 
-        [Min(3)] 
+        [SerializeField]
+        [Min(3)]
         private int starPoints = 5;
-        [SerializeField] 
+        [SerializeField]
         private float starNoise = 0.028f;
+        [SerializeField]
+        private Color32 starFill = new Color32(220, 120, 90, 255);
+        [SerializeField]
+        private Color32 starOutline = new Color32(40, 18, 12, 255);
+        [SerializeField]
+        private float starOutlineThickness = 0.045f;
 
         [Header("Polygon branch")]
         [FormerlySerializedAs("hexTranslation")]
-        [SerializeField] 
+        [SerializeField]
         private Vector2 polygonTranslation = new Vector2(-0.55f, 0.12f);
         [FormerlySerializedAs("hexRadius")]
-        [SerializeField] 
+        [SerializeField]
         private float polygonRadius = 0.36f;
-        [SerializeField] 
-        [Min(3)] 
+        [SerializeField]
+        [Min(3)]
         private int polygonSides = 6;
+        [SerializeField]
+        private Color32 polygonFill = new Color32(90, 170, 210, 255);
+        [SerializeField]
+        private Color32 polygonOutline = new Color32(12, 28, 40, 255);
+        [SerializeField]
+        private float polygonOutlineThickness = 0.04f;
 
         [Header("Circle branch")]
-        [SerializeField] 
+        [SerializeField]
         private Vector2 circleTranslation = new Vector2(0.55f, -0.08f);
-        [SerializeField] 
+        [SerializeField]
         private float circleRadius = 0.32f;
-        [SerializeField] 
-        [Min(3)] 
+        [SerializeField]
+        [Min(3)]
         private int circleSegments = 48;
+        [SerializeField]
+        private Color32 circleFill = new Color32(140, 200, 120, 255);
+        [SerializeField]
+        private Color32 circleOutline = new Color32(16, 36, 18, 255);
+        [SerializeField]
+        private float circleOutlineThickness = 0.04f;
 
         private ProceduralShapeInstance instance;
         private ShapeGraphAsset graphAsset;
 
         private StarNode starNode;
         private NoiseDisplaceNode starNoiseNode;
+        private FillStyleNode starFillNode;
+        private OutlineStyleNode starOutlineNode;
 
         private RegularPolygonNode hexNode;
         private TransformNode hexTransformNode;
+        private FillStyleNode hexFillNode;
+        private OutlineStyleNode hexOutlineNode;
 
         private CircleNode circleNode;
         private TransformNode circleTransformNode;
+        private FillStyleNode circleFillNode;
+        private OutlineStyleNode circleOutlineNode;
 
-        private UnionShapesNode unionNode;
-        private FillMeshNode fillNode;
-        private OutlineMeshNode outlineNode;
+        private ComposeShapesNode composeNode;
         private MeshOutputNode outputNode;
         private bool built;
 
@@ -119,49 +133,61 @@ namespace Galaretka.ShapeGraph.Samples.Smoke
 
         private void BuildGraph()
         {
-            graphAsset = CreateHidden<ShapeGraphAsset>("SmokeDualDomainGraph");
+            graphAsset = CreateHidden<ShapeGraphAsset>("SmokeStyleDomainGraph");
 
             starNode = CreateHidden<StarNode>("Star");
             starNoiseNode = CreateHidden<NoiseDisplaceNode>("StarNoise");
+            starFillNode = CreateHidden<FillStyleNode>("StarFill");
+            starOutlineNode = CreateHidden<OutlineStyleNode>("StarOutline");
 
             hexNode = CreateHidden<RegularPolygonNode>("Hex");
             hexTransformNode = CreateHidden<TransformNode>("HexTransform");
+            hexFillNode = CreateHidden<FillStyleNode>("HexFill");
+            hexOutlineNode = CreateHidden<OutlineStyleNode>("HexOutline");
 
             circleNode = CreateHidden<CircleNode>("Circle");
             circleTransformNode = CreateHidden<TransformNode>("CircleTransform");
+            circleFillNode = CreateHidden<FillStyleNode>("CircleFill");
+            circleOutlineNode = CreateHidden<OutlineStyleNode>("CircleOutline");
 
-            unionNode = CreateHidden<UnionShapesNode>("Union");
-            fillNode = CreateHidden<FillMeshNode>("FillMesh");
-            outlineNode = CreateHidden<OutlineMeshNode>("OutlineMesh");
+            composeNode = CreateHidden<ComposeShapesNode>("Compose");
             outputNode = CreateHidden<MeshOutputNode>("MeshOutput");
 
             graphAsset.AddNodeDirectly(starNode);
             graphAsset.AddNodeDirectly(starNoiseNode);
+            graphAsset.AddNodeDirectly(starFillNode);
+            graphAsset.AddNodeDirectly(starOutlineNode);
             graphAsset.AddNodeDirectly(hexNode);
             graphAsset.AddNodeDirectly(hexTransformNode);
+            graphAsset.AddNodeDirectly(hexFillNode);
+            graphAsset.AddNodeDirectly(hexOutlineNode);
             graphAsset.AddNodeDirectly(circleNode);
             graphAsset.AddNodeDirectly(circleTransformNode);
-            graphAsset.AddNodeDirectly(unionNode);
-            graphAsset.AddNodeDirectly(fillNode);
-            graphAsset.AddNodeDirectly(outlineNode);
+            graphAsset.AddNodeDirectly(circleFillNode);
+            graphAsset.AddNodeDirectly(circleOutlineNode);
+            graphAsset.AddNodeDirectly(composeNode);
             graphAsset.AddNodeDirectly(outputNode);
         }
 
         private void Wire()
         {
-            // Geometry domain
             Connect(starNode, ShapeGeneratorNode.ShapeOut, starNoiseNode, ShapeModifierNode.ShapeIn);
+            Connect(starNoiseNode, ShapeModifierNode.ShapeOut, starFillNode, FillStyleNode.ShapeIn);
+            Connect(starFillNode, FillStyleNode.RegionOut, starOutlineNode, OutlineStyleNode.RegionIn);
+
             Connect(hexNode, ShapeGeneratorNode.ShapeOut, hexTransformNode, ShapeModifierNode.ShapeIn);
+            Connect(hexTransformNode, ShapeModifierNode.ShapeOut, hexFillNode, FillStyleNode.ShapeIn);
+            Connect(hexFillNode, FillStyleNode.RegionOut, hexOutlineNode, OutlineStyleNode.RegionIn);
+
             Connect(circleNode, ShapeGeneratorNode.ShapeOut, circleTransformNode, ShapeModifierNode.ShapeIn);
+            Connect(circleTransformNode, ShapeModifierNode.ShapeOut, circleFillNode, FillStyleNode.ShapeIn);
+            Connect(circleFillNode, FillStyleNode.RegionOut, circleOutlineNode, OutlineStyleNode.RegionIn);
 
-            Connect(starNoiseNode, ShapeModifierNode.ShapeOut, unionNode, UnionShapesNode.ShapeAIn);
-            Connect(hexTransformNode, ShapeModifierNode.ShapeOut, unionNode, UnionShapesNode.ShapeBIn);
-            Connect(circleTransformNode, ShapeModifierNode.ShapeOut, unionNode, UnionShapesNode.ShapeCIn);
+            Connect(starOutlineNode, OutlineStyleNode.RegionOut, composeNode, ComposeShapesNode.RegionAIn);
+            Connect(hexOutlineNode, OutlineStyleNode.RegionOut, composeNode, ComposeShapesNode.RegionBIn);
+            Connect(circleOutlineNode, OutlineStyleNode.RegionOut, composeNode, ComposeShapesNode.RegionCIn);
 
-            // Bridge + mesh domain
-            Connect(unionNode, UnionShapesNode.ShapeOut, fillNode, FillMeshNode.ShapeIn);
-            Connect(fillNode, FillMeshNode.MeshOut, outlineNode, OutlineMeshNode.MeshIn);
-            Connect(outlineNode, OutlineMeshNode.MeshOut, outputNode, TerminalOutputNode.MeshIn);
+            Connect(composeNode, ComposeShapesNode.PictureOut, outputNode, TerminalOutputNode.PictureIn);
         }
 
         private void Connect(ShapeNode from, PortId fromPort, ShapeNode to, PortId toPort)
@@ -185,6 +211,9 @@ namespace Galaretka.ShapeGraph.Samples.Smoke
             starNode.Points = Mathf.Max(3, starPoints);
             starNode.RotationDegrees = -90f;
             starNoiseNode.Amplitude = starNoise;
+            starFillNode.FillColor = starFill;
+            starOutlineNode.OutlineColor = starOutline;
+            starOutlineNode.Thickness = starOutlineThickness;
 
             hexNode.Sides = Mathf.Max(3, polygonSides);
             hexNode.Radius = polygonRadius;
@@ -192,15 +221,17 @@ namespace Galaretka.ShapeGraph.Samples.Smoke
             hexTransformNode.Translation = polygonTranslation;
             hexTransformNode.RotationDegrees = -8f;
             hexTransformNode.PivotMode = TransformPivotMode.Centroid;
+            hexFillNode.FillColor = polygonFill;
+            hexOutlineNode.OutlineColor = polygonOutline;
+            hexOutlineNode.Thickness = polygonOutlineThickness;
 
             circleNode.Radius = circleRadius;
             circleNode.Segments = Mathf.Max(3, circleSegments);
             circleTransformNode.Translation = circleTranslation;
             circleTransformNode.PivotMode = TransformPivotMode.Centroid;
-
-            fillNode.FillColor = fillColor;
-            outlineNode.OutlineColor = outlineColor;
-            outlineNode.Thickness = outlineThickness;
+            circleFillNode.FillColor = circleFill;
+            circleOutlineNode.OutlineColor = circleOutline;
+            circleOutlineNode.Thickness = circleOutlineThickness;
         }
 
         private void BindToInstance()
@@ -224,25 +255,33 @@ namespace Galaretka.ShapeGraph.Samples.Smoke
         private void Cleanup()
         {
             DestroyHidden(outputNode);
-            DestroyHidden(outlineNode);
-            DestroyHidden(fillNode);
-            DestroyHidden(unionNode);
+            DestroyHidden(composeNode);
+            DestroyHidden(circleOutlineNode);
+            DestroyHidden(circleFillNode);
             DestroyHidden(circleTransformNode);
             DestroyHidden(circleNode);
+            DestroyHidden(hexOutlineNode);
+            DestroyHidden(hexFillNode);
             DestroyHidden(hexTransformNode);
             DestroyHidden(hexNode);
+            DestroyHidden(starOutlineNode);
+            DestroyHidden(starFillNode);
             DestroyHidden(starNoiseNode);
             DestroyHidden(starNode);
             DestroyHidden(graphAsset);
 
             outputNode = null;
-            outlineNode = null;
-            fillNode = null;
-            unionNode = null;
+            composeNode = null;
+            circleOutlineNode = null;
+            circleFillNode = null;
             circleTransformNode = null;
             circleNode = null;
+            hexOutlineNode = null;
+            hexFillNode = null;
             hexTransformNode = null;
             hexNode = null;
+            starOutlineNode = null;
+            starFillNode = null;
             starNoiseNode = null;
             starNode = null;
             graphAsset = null;

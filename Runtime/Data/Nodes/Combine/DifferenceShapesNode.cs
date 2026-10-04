@@ -24,10 +24,10 @@ namespace Galaretka.ShapeGraph.Data.Nodes.Combine
         {
             if (portId != ShapeOut) return null;
 
-            IShape2D subject = GetInputShape(SubjectIn, context, graph);
+            IShape2D subject = ShapeGeometry.RequireBare(GetInputShape(SubjectIn, context, graph), "Combine/Difference");
             if (subject == null) return null;
 
-            IShape2D clip = GetInputShape(ClipIn, context, graph);
+            IShape2D clip = ShapeGeometry.RequireBare(GetInputShape(ClipIn, context, graph), "Combine/Difference");
             if (clip == null) return subject.CloneShape();
 
             if (PolygonBoolean.TryDifference(subject, clip, out IShape2D result) && result != null) return result;

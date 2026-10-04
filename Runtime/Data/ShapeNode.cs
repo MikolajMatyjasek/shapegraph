@@ -16,12 +16,12 @@ namespace Galaretka.ShapeGraph.Data
 
     public abstract class ShapeNode : ScriptableObject
     {
-        [SerializeField] 
+        [SerializeField]
         private NodeId id;
-        [SerializeField] 
+        [SerializeField]
         private Vector2 graphPosition;
 
-        [NonSerialized] 
+        [NonSerialized]
         private uint localVersion = 1;
 
         public NodeId Id => id;
@@ -53,6 +53,16 @@ namespace Galaretka.ShapeGraph.Data
             return result;
         }
 
+        public ShapePicture2D EvaluatePicture(PortId portId, ShapeContext context, ShapeGraphAsset graph)
+        {
+            PortKey key = new(id, portId);
+            if (context.TryGetPicture(key, out ShapePicture2D cached)) return cached;
+
+            ShapePicture2D result = ComputePicture(portId, context, graph);
+            context.SetPicture(key, result);
+            return result;
+        }
+
         public ParameterValue EvaluateValue(PortId portId, ShapeContext context, ShapeGraphAsset graph)
         {
             PortKey key = new(id, portId);
@@ -73,25 +83,15 @@ namespace Galaretka.ShapeGraph.Data
             return result;
         }
 
-        public ShapeMesh2D EvaluateMesh(PortId portId, ShapeContext context, ShapeGraphAsset graph)
-        {
-            PortKey key = new(id, portId);
-            if (context.TryGetMesh(key, out ShapeMesh2D cached)) return cached;
-
-            ShapeMesh2D result = ComputeMesh(portId, context, graph);
-            context.SetMesh(key, result);
-            return result;
-        }
-
         protected virtual IShape2D ComputeShape(PortId portId, ShapeContext context, ShapeGraphAsset graph) => null;
+
+        protected virtual ShapePicture2D ComputePicture(PortId portId, ShapeContext context, ShapeGraphAsset graph) => null;
 
         protected virtual ParameterValue ComputeValue(PortId portId, ShapeContext context, ShapeGraphAsset graph) =>
             default;
 
         protected virtual Color32 ComputeColor32(PortId portId, ShapeContext context, ShapeGraphAsset graph) =>
             new Color32(255, 255, 255, 255);
-
-        protected virtual ShapeMesh2D ComputeMesh(PortId portId, ShapeContext context, ShapeGraphAsset graph) => null;
 
         protected IShape2D GetInputShape(PortId inputPortId, ShapeContext context, ShapeGraphAsset graph, IShape2D fallback = null)
         {
@@ -102,6 +102,24 @@ namespace Galaretka.ShapeGraph.Data
             return source != null
                 ? source.EvaluateShape(conn.Value.FromPortId, context, graph)
                 : fallback;
+        }
+
+        protected ShapePicture2D GetInputPicture(PortId inputPortId, ShapeContext context, ShapeGraphAsset graph, ShapePicture2D fallback = null)
+        {
+            NodeConnection? conn = graph.GetConnectionToInput(id, inputPortId);
+            if (!conn.HasValue) return fallback;
+
+            ShapeNode source = graph.GetNodeById(conn.Value.FromNodeId);
+            if (source == null) return fallback;
+
+            ShapePicture2D picture = source.EvaluatePicture(conn.Value.FromPortId, context, graph);
+            if (picture != null) return picture;
+
+            IShape2D shape = source.EvaluateShape(conn.Value.FromPortId, context, graph);
+            if (shape is ShapeRegion2D region)
+                return ShapePicture2D.FromRegion(region);
+
+            return fallback;
         }
 
         protected ParameterValue GetInputValue(PortId inputPortId, ShapeContext context, ShapeGraphAsset graph, ParameterValue fallback = default)
@@ -147,17 +165,6 @@ namespace Galaretka.ShapeGraph.Data
             ShapeNode source = graph.GetNodeById(conn.Value.FromNodeId);
             return source != null
                 ? source.EvaluateColor32(conn.Value.FromPortId, context, graph)
-                : fallback;
-        }
-
-        protected ShapeMesh2D GetInputMesh(PortId inputPortId, ShapeContext context, ShapeGraphAsset graph, ShapeMesh2D fallback = null)
-        {
-            NodeConnection? conn = graph.GetConnectionToInput(id, inputPortId);
-            if (!conn.HasValue) return fallback;
-
-            ShapeNode source = graph.GetNodeById(conn.Value.FromNodeId);
-            return source != null
-                ? source.EvaluateMesh(conn.Value.FromPortId, context, graph)
                 : fallback;
         }
 

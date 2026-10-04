@@ -19,7 +19,8 @@ namespace Galaretka.ShapeGraph.Typing
             GetOrRegister(typeof(RegularPolygon2D));
             GetOrRegister(typeof(Star2D));
             GetOrRegister(typeof(MultiPolygon2D));
-            GetOrRegister(typeof(ShapeMesh2D));
+            GetOrRegister(typeof(ShapeRegion2D));
+            GetOrRegister(typeof(ShapePicture2D));
             GetOrRegister(typeof(float));
             GetOrRegister(typeof(int));
             GetOrRegister(typeof(bool));
@@ -69,6 +70,11 @@ namespace Galaretka.ShapeGraph.Typing
 
             if (from == to) return true;
 
+            if (typeof(ShapeRegion2D).IsAssignableFrom(from) &&
+                to == typeof(IShape2D)) return false;
+
+            if (from == typeof(ShapeRegion2D) && to == typeof(ShapePicture2D)) return true;
+
             if (IsExactOnlyType(from) || IsExactOnlyType(to)) return false;
 
             return to.IsAssignableFrom(from);
@@ -82,7 +88,8 @@ namespace Galaretka.ShapeGraph.Typing
                    || type == typeof(Vector3)
                    || type == typeof(Color)
                    || type == typeof(Color32)
-                   || type == typeof(ShapeMesh2D);
+                   || type == typeof(ShapePicture2D)
+                   || type == typeof(ShapeRegion2D);
         }
 
         private static int ComputeTypeHash(Type type)

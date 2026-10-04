@@ -2,19 +2,18 @@ using System.Collections.Generic;
 using Galaretka.ShapeGraph.Core;
 using Galaretka.ShapeGraph.Core.Geometry;
 using Galaretka.ShapeGraph.Evaluation;
-using Galaretka.ShapeGraph.Meshing;
 using UnityEngine;
 
-namespace Galaretka.ShapeGraph.Data.Nodes.Mesh
+namespace Galaretka.ShapeGraph.Data.Nodes.Style
 {
-    [NodeMenu("Mesh/Fill")]
-    public sealed class FillMeshNode : ShapeNode
+    [NodeMenu("Style/Fill")]
+    public sealed class FillStyleNode : ShapeNode
     {
         public static readonly PortId ShapeIn = new("Shape In");
         public static readonly PortId FillColorIn = new("Fill Color");
-        public static readonly PortId MeshOut = new("Mesh Out");
+        public static readonly PortId RegionOut = new("Region Out");
 
-        [SerializeField] 
+        [SerializeField]
         private Color32 fillColor = new Color32(160, 170, 190, 255);
 
         public Color32 FillColor
@@ -27,22 +26,18 @@ namespace Galaretka.ShapeGraph.Data.Nodes.Mesh
         {
             ports.Add(new NodePort(ShapeIn, "Shape In", PortDirection.Input, typeof(IShape2D)));
             ports.Add(new NodePort(FillColorIn, "Fill Color", PortDirection.Input, typeof(Color32)));
-            ports.Add(new NodePort(MeshOut, "Mesh Out", PortDirection.Output, typeof(ShapeMesh2D)));
+            ports.Add(new NodePort(RegionOut, "Region Out", PortDirection.Output, typeof(ShapeRegion2D)));
         }
 
-        protected override ShapeMesh2D ComputeMesh(PortId portId, ShapeContext context, ShapeGraphAsset graph)
+        protected override IShape2D ComputeShape(PortId portId, ShapeContext context, ShapeGraphAsset graph)
         {
-            if (portId != MeshOut) return null;
+            if (portId != RegionOut) return null;
 
-            IShape2D shape = GetInputShape(ShapeIn, context, graph);
+            IShape2D shape = ShapeGeometry.RequireBare(GetInputShape(ShapeIn, context, graph), "Style/Fill");
             if (shape == null) return null;
 
-            var polygons = new List<Polygon2D>(4);
-            PolygonBoolean.CollectPolygons(shape, polygons);
-            if (polygons.Count == 0) return null;
-
             Color32 color = GetInputColor32(FillColorIn, context, graph, fillColor);
-            return MeshOps.BuildFill(polygons, color);
+            return new ShapeRegion2D(shape, color);
         }
     }
 }

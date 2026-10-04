@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Galaretka.ShapeGraph.Core;
+using Galaretka.ShapeGraph.Core.Geometry;
 using Galaretka.ShapeGraph.Evaluation;
 using UnityEngine;
 
@@ -20,7 +21,7 @@ namespace Galaretka.ShapeGraph.Data.Patterns
         {
             if (portId != ShapeOut) return null;
 
-            IShape2D input = GetInputShape(ShapeIn, context, graph);
+            IShape2D input = ShapeGeometry.RequireBare(GetInputShape(ShapeIn, context, graph), "Modifier");
             if (input == null) return null;
 
             return ModifyShape(input, context, graph);

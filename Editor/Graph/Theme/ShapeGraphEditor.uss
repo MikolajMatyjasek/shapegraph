@@ -90,7 +90,11 @@ ShapeGraphView {
     border-color: rgb(70, 110, 170);
 }
 
-.shape-graph-node.domain-mesh {
+.shape-graph-node.domain-style {
+    border-color: rgb(110, 150, 70);
+}
+
+.shape-graph-node.domain-picture {
     border-color: rgb(40, 140, 130);
 }
 
@@ -123,7 +127,12 @@ ShapeGraphView {
     color: rgb(170, 200, 255);
 }
 
-.domain-pill.mesh {
+.domain-pill.style {
+    background-color: rgba(120, 180, 70, 0.25);
+    color: rgb(190, 230, 140);
+}
+
+.domain-pill.picture {
     background-color: rgba(40, 180, 160, 0.25);
     color: rgb(150, 230, 210);
 }

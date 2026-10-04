@@ -26,9 +26,9 @@ namespace Galaretka.ShapeGraph.Data.Nodes.Combine
         {
             if (portId != ShapeOut) return null;
 
-            IShape2D a = GetInputShape(ShapeAIn, context, graph);
-            IShape2D b = GetInputShape(ShapeBIn, context, graph);
-            IShape2D c = GetInputShape(ShapeCIn, context, graph);
+            IShape2D a = ShapeGeometry.RequireBare(GetInputShape(ShapeAIn, context, graph), "Combine/Union");
+            IShape2D b = ShapeGeometry.RequireBare(GetInputShape(ShapeBIn, context, graph), "Combine/Union");
+            IShape2D c = ShapeGeometry.RequireBare(GetInputShape(ShapeCIn, context, graph), "Combine/Union");
 
             IShape2D acc = null;
             if (a != null) acc = a;

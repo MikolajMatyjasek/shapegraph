@@ -28,10 +28,6 @@ namespace Galaretka.ShapeGraph.Editor.Graph.Preview
             new(GeneratedMeshData.Empty, false, error);
     }
 
-    /// <summary>
-    /// Evaluates a node to <see cref="GeneratedMeshData"/> using the runtime pipeline.
-    /// Geometry nodes get a neutral editor fill.
-    /// </summary>
     public static class PreviewEvaluator
     {
         private static readonly List<NodePort> PortBuffer = new(16);
@@ -39,8 +35,7 @@ namespace Galaretka.ShapeGraph.Editor.Graph.Preview
 
         public static PreviewEvalResult EvaluateNode(ShapeGraphAsset asset, ShapeNode node, int seed)
         {
-            if (asset == null || node == null)
-                return PreviewEvalResult.Failed("Missing asset or node.");
+            if (asset == null || node == null) return PreviewEvalResult.Failed("Missing asset or node.");
 
             try
             {
@@ -55,27 +50,34 @@ namespace Galaretka.ShapeGraph.Editor.Graph.Preview
                 PortBuffer.Clear();
                 node.CollectPorts(PortBuffer);
 
-                PortId? meshOut = FindFirstOutput(typeof(ShapeMesh2D));
-                if (meshOut.HasValue)
+                PortId? pictureOut = FindFirstOutput(typeof(ShapePicture2D));
+                if (pictureOut.HasValue)
                 {
-                    ShapeMesh2D mesh = node.EvaluateMesh(meshOut.Value, context, asset);
-                    if (mesh == null || !mesh.IsValid)
-                        return PreviewEvalResult.Failed("Mesh output invalid.");
-                    return new PreviewEvalResult(mesh.ToGeneratedMeshData(), true, null);
+                    ShapePicture2D picture = node.EvaluatePicture(pictureOut.Value, context, asset);
+                    if (picture == null || picture.Layers.Count == 0) return PreviewEvalResult.Failed("Picture output empty.");
+                    GeneratedMeshData baked = ShapeBake.BakePicture(picture);
+                    return new PreviewEvalResult(baked, baked.Vertices != null && baked.Vertices.Length >= 3, null);
                 }
 
-                PortId? shapeOut = FindFirstShapeOutput();
+                PortId? regionOut = FindFirstOutput(typeof(ShapeRegion2D));
+                if (regionOut.HasValue)
+                {
+                    IShape2D shape = node.EvaluateShape(regionOut.Value, context, asset);
+                    if (shape is not ShapeRegion2D region) return PreviewEvalResult.Failed("Region output invalid.");
+                    GeneratedMeshData baked = ShapeBake.BakeRegion(region);
+                    return new PreviewEvalResult(baked, baked.Vertices != null && baked.Vertices.Length >= 3, null);
+                }
+
+                PortId? shapeOut = FindFirstBareShapeOutput();
                 if (shapeOut.HasValue)
                 {
                     IShape2D shape = node.EvaluateShape(shapeOut.Value, context, asset);
-                    if (shape == null)
-                        return PreviewEvalResult.Failed("Shape output null.");
+                    if (shape == null) return PreviewEvalResult.Failed("Shape output null.");
 
                     PolygonBuffer.Clear();
-                    PolygonBoolean.CollectPolygons(shape, PolygonBuffer);
+                    ShapeGeometry.CollectPolygons(shape, PolygonBuffer);
                     ShapeMesh2D filled = MeshOps.BuildFill(PolygonBuffer, PortColorMap.PreviewNeutralFill);
-                    if (filled == null || !filled.IsValid)
-                        return PreviewEvalResult.Failed("Geometry preview fill failed.");
+                    if (filled == null || !filled.IsValid) return PreviewEvalResult.Failed("Geometry preview fill failed.");
                     return new PreviewEvalResult(filled.ToGeneratedMeshData(), true, null);
                 }
 
@@ -89,8 +91,7 @@ namespace Galaretka.ShapeGraph.Editor.Graph.Preview
 
         public static PreviewEvalResult EvaluateMaster(ShapeGraphAsset asset, int seed)
         {
-            if (asset == null)
-                return PreviewEvalResult.Failed("Missing asset.");
+            if (asset == null) return PreviewEvalResult.Failed("Missing asset.");
 
             try
             {
@@ -110,20 +111,20 @@ namespace Galaretka.ShapeGraph.Editor.Graph.Preview
             for (int i = 0; i < PortBuffer.Count; i++)
             {
                 NodePort p = PortBuffer[i];
-                if (p.Direction == PortDirection.Output && p.GetPortType() == exactType)
-                    return p.Id;
+                if (p.Direction == PortDirection.Output && p.GetPortType() == exactType) return p.Id;
             }
             return null;
         }
 
-        private static PortId? FindFirstShapeOutput()
+        private static PortId? FindFirstBareShapeOutput()
         {
             for (int i = 0; i < PortBuffer.Count; i++)
             {
                 NodePort p = PortBuffer[i];
                 Type t = p.GetPortType();
-                if (p.Direction == PortDirection.Output && t != null && typeof(IShape2D).IsAssignableFrom(t))
-                    return p.Id;
+                if (p.Direction != PortDirection.Output || t == null) continue;
+                if (t == typeof(ShapeRegion2D) || t == typeof(ShapePicture2D)) continue;
+                if (typeof(IShape2D).IsAssignableFrom(t)) return p.Id;
             }
             return null;
         }

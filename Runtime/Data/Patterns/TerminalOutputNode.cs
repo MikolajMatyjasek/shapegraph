@@ -1,25 +1,25 @@
 using System.Collections.Generic;
 using Galaretka.ShapeGraph.Core;
 using Galaretka.ShapeGraph.Evaluation;
-using UnityEngine;
+using Galaretka.ShapeGraph.Meshing;
 
 namespace Galaretka.ShapeGraph.Data.Patterns
 {
     public abstract class TerminalOutputNode : ShapeNode
     {
-        public static readonly PortId MeshIn = new("Mesh In");
+        public static readonly PortId PictureIn = new("Picture In");
 
         public override void CollectPorts(List<NodePort> ports)
         {
-            ports.Add(new NodePort(MeshIn, "Mesh In", PortDirection.Input, typeof(ShapeMesh2D)));
+            ports.Add(new NodePort(PictureIn, "Picture In", PortDirection.Input, typeof(ShapePicture2D)));
         }
 
         public GeneratedMeshData EvaluateFinalMesh(ShapeContext context, ShapeGraphAsset graph)
         {
-            ShapeMesh2D mesh = GetInputMesh(MeshIn, context, graph);
-            if (mesh == null || !mesh.IsValid) return GeneratedMeshData.Empty;
+            ShapePicture2D picture = GetInputPicture(PictureIn, context, graph);
+            if (picture == null || picture.Layers.Count == 0) return GeneratedMeshData.Empty;
 
-            return mesh.ToGeneratedMeshData();
+            return ShapeBake.BakePicture(picture);
         }
     }
 }
