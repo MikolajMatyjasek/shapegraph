@@ -7,14 +7,18 @@ namespace Galaretka.ShapeGraph.Core
         public Vector3[] Vertices;
         public int[] Triangles;
         public Color32[] Colors;
+
         public Vector2[] ColliderBoundary;
+
+        public Vector2[][] ColliderPaths;
 
         public static GeneratedMeshData Empty => new()
         {
             Vertices = new Vector3[0],
             Triangles = new int[0],
             Colors = new Color32[0],
-            ColliderBoundary = new Vector2[0]
+            ColliderBoundary = new Vector2[0],
+            ColliderPaths = null
         };
 
         public Mesh ToMesh(string meshName = "ShapeGraph_Mesh")

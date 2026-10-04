@@ -73,6 +73,16 @@ namespace Galaretka.ShapeGraph.Data
             return result;
         }
 
+        public ShapeMesh2D EvaluateMesh(PortId portId, ShapeContext context, ShapeGraphAsset graph)
+        {
+            PortKey key = new(id, portId);
+            if (context.TryGetMesh(key, out ShapeMesh2D cached)) return cached;
+
+            ShapeMesh2D result = ComputeMesh(portId, context, graph);
+            context.SetMesh(key, result);
+            return result;
+        }
+
         protected virtual IShape2D ComputeShape(PortId portId, ShapeContext context, ShapeGraphAsset graph) => null;
 
         protected virtual ParameterValue ComputeValue(PortId portId, ShapeContext context, ShapeGraphAsset graph) =>
@@ -80,6 +90,8 @@ namespace Galaretka.ShapeGraph.Data
 
         protected virtual Color32 ComputeColor32(PortId portId, ShapeContext context, ShapeGraphAsset graph) =>
             new Color32(255, 255, 255, 255);
+
+        protected virtual ShapeMesh2D ComputeMesh(PortId portId, ShapeContext context, ShapeGraphAsset graph) => null;
 
         protected IShape2D GetInputShape(PortId inputPortId, ShapeContext context, ShapeGraphAsset graph, IShape2D fallback = null)
         {
@@ -136,6 +148,76 @@ namespace Galaretka.ShapeGraph.Data
             return source != null
                 ? source.EvaluateColor32(conn.Value.FromPortId, context, graph)
                 : fallback;
+        }
+
+        protected ShapeMesh2D GetInputMesh(PortId inputPortId, ShapeContext context, ShapeGraphAsset graph, ShapeMesh2D fallback = null)
+        {
+            NodeConnection? conn = graph.GetConnectionToInput(id, inputPortId);
+            if (!conn.HasValue) return fallback;
+
+            ShapeNode source = graph.GetNodeById(conn.Value.FromNodeId);
+            return source != null
+                ? source.EvaluateMesh(conn.Value.FromPortId, context, graph)
+                : fallback;
+        }
+
+        protected float ResolveFloat(PortId portId, ShapeContext context, ShapeGraphAsset graph, float embedded)
+        {
+            NodeConnection? conn = graph.GetConnectionToInput(id, portId);
+            if (!conn.HasValue)
+                return embedded;
+
+            ShapeNode source = graph.GetNodeById(conn.Value.FromNodeId);
+            if (source == null)
+                return embedded;
+
+            ParameterValue value = source.EvaluateValue(conn.Value.FromPortId, context, graph);
+            if (value.Type != ParameterValueType.Float)
+            {
+                Debug.LogWarning(
+                    $"[ShapeGraph] Node '{name}' port resolve expected Float, got {value.Type}. Using embedded value.");
+                return embedded;
+            }
+
+            return value.AsFloat();
+        }
+
+        protected int ResolveInt(PortId portId, ShapeContext context, ShapeGraphAsset graph, int embedded)
+        {
+            NodeConnection? conn = graph.GetConnectionToInput(id, portId);
+            if (!conn.HasValue) return embedded;
+
+            ShapeNode source = graph.GetNodeById(conn.Value.FromNodeId);
+            if (source == null) return embedded;
+
+            ParameterValue value = source.EvaluateValue(conn.Value.FromPortId, context, graph);
+            if (value.Type != ParameterValueType.Int)
+            {
+                Debug.LogWarning(
+                    $"[ShapeGraph] Node '{name}' port resolve expected Int, got {value.Type}. Using embedded value.");
+                return embedded;
+            }
+
+            return value.AsInt();
+        }
+
+        protected Vector2 ResolveVector2(PortId portId, ShapeContext context, ShapeGraphAsset graph, Vector2 embedded)
+        {
+            NodeConnection? conn = graph.GetConnectionToInput(id, portId);
+            if (!conn.HasValue) return embedded;
+
+            ShapeNode source = graph.GetNodeById(conn.Value.FromNodeId);
+            if (source == null) return embedded;
+
+            ParameterValue value = source.EvaluateValue(conn.Value.FromPortId, context, graph);
+            if (value.Type != ParameterValueType.Vector2)
+            {
+                Debug.LogWarning(
+                    $"[ShapeGraph] Node '{name}' port resolve expected Vector2, got {value.Type}. Using embedded value.");
+                return embedded;
+            }
+
+            return value.AsVector2();
         }
     }
 }

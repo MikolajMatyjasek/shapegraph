@@ -169,7 +169,27 @@ namespace Galaretka.ShapeGraph.Components
             runtimeMesh.RecalculateBounds();
 
             var col = GetComponent<PolygonCollider2D>();
-            if (meshData.ColliderBoundary != null && meshData.ColliderBoundary.Length >= 3)
+            Vector2[][] paths = meshData.ColliderPaths;
+            if (paths != null && paths.Length > 0)
+            {
+                int pathCount = 0;
+                for (int i = 0; i < paths.Length; i++)
+                {
+                    if (paths[i] != null && paths[i].Length >= 3)
+                    {
+                        pathCount++;
+                    }
+                }
+
+                col.pathCount = pathCount;
+                int write = 0;
+                for (int i = 0; i < paths.Length; i++)
+                {
+                    if (paths[i] == null || paths[i].Length < 3) continue;
+                    col.SetPath(write++, paths[i]);
+                }
+            }
+            else if (meshData.ColliderBoundary != null && meshData.ColliderBoundary.Length >= 3)
             {
                 col.pathCount = 1;
                 col.SetPath(0, meshData.ColliderBoundary);

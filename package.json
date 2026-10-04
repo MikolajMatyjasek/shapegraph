@@ -1,28 +1,28 @@
 {
-    "name": "com.galaretka.shapegraph",
-    "version": "0.0.1",
-    "displayName": "Shape Graph 2D",
-    "description": "Node-based procedural 2D vector mesh and collider generator with deterministic randomization and live previews.",
-    "unity": "6000.0",
-    "author": {
-      "name": "Galaretka",
-      "email": "mikolajmatyjasek.dev@gmail.com",
-      "url": "https://mikolajmatyjasek.com/"
-    },
-    "keywords": [
-      "2d",
-      "procedural",
-      "mesh",
-      "vector",
-      "graphview",
-      "collider"
-    ],
-    "dependencies": {},
-    "samples": [
-      {
-        "displayName": "Interactive Demo Scene",
-        "description": "Showcase scene featuring procedural rocks, trees, and physics interaction.",
-        "path": "Samples~/Demo"
-      }
-    ]
-  }
+  "name": "com.galaretka.shapegraph",
+  "version": "0.0.2",
+  "displayName": "Shape Graph 2D",
+  "description": "Node-based procedural 2D vector mesh and collider generator with deterministic randomization and live previews.",
+  "unity": "6000.0",
+  "author": {
+    "name": "Galaretka",
+    "email": "mikolajmatyjasek.dev@gmail.com",
+    "url": "https://mikolajmatyjasek.com/"
+  },
+  "keywords": [
+    "2d",
+    "procedural",
+    "mesh",
+    "vector",
+    "graphview",
+    "collider"
+  ],
+  "dependencies": {},
+  "samples": [
+    {
+      "displayName": "Smoke Demo",
+      "description": "One-component live graph: Union(Star, Hex, Circle) → Fill → Outline → Mesh Output.",
+      "path": "Samples~/Smoke"
+    }
+  ]
+}

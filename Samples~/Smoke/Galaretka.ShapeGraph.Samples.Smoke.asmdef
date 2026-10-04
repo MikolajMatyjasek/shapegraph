@@ -1,0 +1,16 @@
+{
+    "name": "Galaretka.ShapeGraph.Samples.Smoke",
+    "rootNamespace": "Galaretka.ShapeGraph.Samples.Smoke",
+    "references": [
+        "GUID:4719e48303cb5694e8bfe7d74276dcc9"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

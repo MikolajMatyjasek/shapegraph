@@ -9,6 +9,7 @@ namespace Galaretka.ShapeGraph.Evaluation
     {
         private readonly IReadOnlyDictionary<ParameterId, ParameterValue> parameterOverrides;
         private readonly Dictionary<PortKey, IShape2D> shapeCache = new();
+        private readonly Dictionary<PortKey, ShapeMesh2D> meshCache = new();
         private readonly Dictionary<PortKey, ParameterValue> valueCache = new();
         private readonly Dictionary<PortKey, Color32> color32Cache = new();
 
@@ -30,6 +31,9 @@ namespace Galaretka.ShapeGraph.Evaluation
 
         public bool TryGetShape(PortKey key, out IShape2D value) => shapeCache.TryGetValue(key, out value);
         public void SetShape(PortKey key, IShape2D value) => shapeCache[key] = value;
+
+        public bool TryGetMesh(PortKey key, out ShapeMesh2D value) => meshCache.TryGetValue(key, out value);
+        public void SetMesh(PortKey key, ShapeMesh2D value) => meshCache[key] = value;
 
         public bool TryGetValue(PortKey key, out ParameterValue value) => valueCache.TryGetValue(key, out value);
         public void SetValue(PortKey key, ParameterValue value) => valueCache[key] = value;
