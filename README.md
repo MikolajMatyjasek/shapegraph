@@ -7,6 +7,10 @@ Node-based procedural 2D vector mesh and collider generator for Unity 6 with det
 1. **Geometry** (`IShape2D`) — analytic shapes, polygon ops, boolean Union/Difference.
 2. **Mesh** (`ShapeMesh2D`) — Fill triangulates once; Outline/TransformMesh compose buffers; Mesh Output emits one Unity mesh.
 
+## Graph editor
+
+Double-click a Shape Graph asset (or `Window → Galaretka → Shape Graph Editor`). Classic GraphView, typed ports, Undo-safe editing, and per-node pixel previews from the runtime mesh pipeline.
+
 ## Extending (without forking)
 
 1. Create an assembly definition that references `Galaretka.ShapeGraph`.

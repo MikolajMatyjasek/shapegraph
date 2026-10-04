@@ -2,7 +2,10 @@
     "name": "Galaretka.ShapeGraph.Editor",
     "rootNamespace": "Galaretka.ShapeGraph.Editor",
     "references": [
-        "GUID:4719e48303cb5694e8bfe7d74276dcc9"
+        "GUID:4719e48303cb5694e8bfe7d74276dcc9",
+        "UnityEditor.GraphViewModule",
+        "UnityEditor.UIElementsModule",
+        "UnityEngine.UIElementsModule"
     ],
     "includePlatforms": [
         "Editor"

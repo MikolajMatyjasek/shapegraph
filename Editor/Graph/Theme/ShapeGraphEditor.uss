@@ -1,0 +1,154 @@
+GridBackground {
+    --grid-background-color: rgb(28, 30, 34);
+    --line-color: rgba(255, 255, 255, 0.04);
+    --thick-line-color: rgba(255, 255, 255, 0.08);
+}
+
+ShapeGraphView {
+    background-color: rgb(28, 30, 34);
+    flex-grow: 1;
+}
+
+.shape-graph-root {
+    flex-grow: 1;
+    flex-direction: column;
+    background-color: rgb(24, 26, 30);
+}
+
+.toolbar {
+    flex-direction: row;
+    align-items: center;
+    height: 28px;
+    padding: 2px 6px;
+    background-color: rgb(36, 38, 44);
+    border-bottom-width: 1px;
+    border-bottom-color: rgb(20, 20, 22);
+}
+
+.toolbar Label {
+    margin-right: 6px;
+    color: rgb(200, 200, 205);
+}
+
+.body-row {
+    flex-grow: 1;
+    flex-direction: row;
+}
+
+.graph-host {
+    flex-grow: 1;
+    min-width: 200px;
+}
+
+.side-column {
+    width: 280px;
+    min-width: 220px;
+    border-left-width: 1px;
+    border-left-color: rgb(20, 20, 22);
+    background-color: rgb(32, 34, 40);
+    flex-direction: column;
+}
+
+.inspector-pane {
+    flex-grow: 1;
+    padding: 8px;
+}
+
+.inspector-title {
+    -unity-font-style: bold;
+    font-size: 13px;
+    margin-bottom: 8px;
+    color: rgb(230, 230, 235);
+}
+
+.master-preview-pane {
+    height: 220px;
+    border-top-width: 1px;
+    border-top-color: rgb(20, 20, 22);
+    background-color: rgb(22, 24, 28);
+    padding: 6px;
+}
+
+.master-preview-pane Label {
+    color: rgb(180, 180, 190);
+    margin-bottom: 4px;
+}
+
+.master-preview-image {
+    flex-grow: 1;
+    background-color: rgb(18, 19, 22);
+}
+
+.shape-graph-node {
+    border-radius: 6px;
+    border-width: 1px;
+    border-color: rgb(55, 58, 66);
+    background-color: rgb(40, 43, 50);
+}
+
+.shape-graph-node.domain-geometry {
+    border-color: rgb(70, 110, 170);
+}
+
+.shape-graph-node.domain-mesh {
+    border-color: rgb(40, 140, 130);
+}
+
+.shape-graph-node.domain-output {
+    border-color: rgb(160, 160, 170);
+    border-width: 2px;
+}
+
+.node-preview {
+    width: 128px;
+    height: 128px;
+    margin: 6px;
+    align-self: center;
+    background-color: rgb(20, 22, 26);
+    border-radius: 4px;
+}
+
+.domain-pill {
+    font-size: 9px;
+    margin-left: 6px;
+    padding: 1px 6px;
+    border-radius: 8px;
+    background-color: rgba(255, 255, 255, 0.08);
+    color: rgb(210, 210, 220);
+    align-self: center;
+}
+
+.domain-pill.geometry {
+    background-color: rgba(80, 140, 220, 0.25);
+    color: rgb(170, 200, 255);
+}
+
+.domain-pill.mesh {
+    background-color: rgba(40, 180, 160, 0.25);
+    color: rgb(150, 230, 210);
+}
+
+.domain-pill.output {
+    background-color: rgba(200, 200, 210, 0.2);
+}
+
+.preview-status {
+    font-size: 9px;
+    color: rgb(140, 140, 150);
+    margin: 0 8px 4px 8px;
+    -unity-text-align: middle-center;
+}
+
+.preview-status.error {
+    color: rgb(220, 120, 120);
+}
+
+.empty-state {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 40%;
+    -unity-text-align: middle-center;
+    color: rgb(120, 122, 130);
+    font-size: 13px;
+}

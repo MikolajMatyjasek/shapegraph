@@ -123,6 +123,10 @@ namespace Galaretka.ShapeGraph.Data
             NotifyModified();
         }
 
+        /// <summary>
+        /// Registers a node in the document list. Editor owns sub-asset lifecycle
+        /// (<c>AssetDatabase.AddObjectToAsset</c> / destroy); samples may use HideAndDontSave instances.
+        /// </summary>
         public void AddNodeDirectly(ShapeNode node)
         {
             if (node == null) return;
