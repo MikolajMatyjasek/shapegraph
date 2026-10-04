@@ -9,19 +9,19 @@ namespace Galaretka.ShapeGraph.Data
     [Serializable]
     public class GraphParameter
     {
-        [SerializeField] 
+        [SerializeField]
         private string name = "NewParameter";
-        [SerializeField] 
+        [SerializeField]
         private ParameterId id;
-        [SerializeField] 
+        [SerializeField]
         private ParameterValueType valueType = ParameterValueType.Float;
-        [SerializeField] 
+        [SerializeField]
         private ParameterMode mode = ParameterMode.Constant;
-        [SerializeField] 
+        [SerializeField]
         private ParameterValue constantOrDefault;
-        [SerializeField] 
+        [SerializeField]
         private ParameterValue rangeMin;
-        [SerializeField] 
+        [SerializeField]
         private ParameterValue rangeMax;
 
         public string Name => name;
@@ -53,6 +53,37 @@ namespace Galaretka.ShapeGraph.Data
         public void ValidateId()
         {
             id = ParameterId.FromString(name);
+        }
+
+        public void SetName(string paramName)
+        {
+            name = string.IsNullOrWhiteSpace(paramName) ? "NewParameter" : paramName.Trim();
+            ValidateId();
+        }
+
+        public void SetMode(ParameterMode newMode) => mode = newMode;
+
+        public void SetValueType(ParameterValueType newType)
+        {
+            if (valueType == newType)
+                return;
+
+            valueType = newType;
+            ParameterValue defaults = ParameterValue.DefaultFor(newType);
+            constantOrDefault = defaults;
+            rangeMin = defaults;
+            rangeMax = defaults;
+        }
+
+        public void SetConstant(ParameterValue value)
+        {
+            constantOrDefault = EnsureType(value);
+        }
+
+        public void SetRange(ParameterValue min, ParameterValue max)
+        {
+            rangeMin = EnsureType(min);
+            rangeMax = EnsureType(max);
         }
 
         public ParameterValue Evaluate(ShapeContext context)

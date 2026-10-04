@@ -4,10 +4,11 @@ using UnityEngine;
 namespace Galaretka.ShapeGraph.Core
 {
     [Serializable]
-    public readonly struct PortId : IEquatable<PortId>
+    // Not a readonly struct: Unity must deserialize mutable backing fields across domain reload.
+    public struct PortId : IEquatable<PortId>
     {
-        [SerializeField] 
-        private readonly int hash;
+        [SerializeField]
+        private int hash;
 
         public int Hash => hash;
 

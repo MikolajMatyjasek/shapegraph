@@ -11,9 +11,11 @@ Node-based procedural 2D vector mesh and collider generator for Unity 6 with det
 
 Boolean never accepts styled regions. Multi-color means multiple regions in a picture, not “union then hope”.
 
+**Parameters** are a Value layer: author them in the graph editor (or asset inspector), wire with `Values/Parameter`, and override Exposed values on `ProceduralShapeInstance`. RandomRange is seed-driven.
+
 ## Graph editor
 
-Double-click a Shape Graph asset (or `Window → Galaretka → Shape Graph Editor`). Classic GraphView, typed ports, Undo-safe editing, and per-node pixel previews from the same bake kernel as Play Mode.
+Double-click a Shape Graph asset (or `Window → Galaretka → Shape Graph Editor`). Classic GraphView, typed ports, Undo-safe editing, and per-node pixel previews from the same bake kernel as Play Mode (isolated from the open scene).
 
 ## Extending (without forking)
 

@@ -12,10 +12,13 @@ namespace Galaretka.ShapeGraph.Editor.Graph
 {
     public sealed class ShapeGraphEditorWindow : EditorWindow
     {
+        private const string SessionAssetGuidKey = "ShapeGraph.Editor.BoundAssetGuid";
+
         private GraphDirtyTracker dirtyTracker;
         private GraphCommandService commands;
         private NodePreviewService previews;
         private ShapeGraphView graphView;
+        private ParametersPane parametersPane;
         private NodeInspectorPane inspectorPane;
         private Image masterPreview;
         private ObjectField assetField;
@@ -48,8 +51,16 @@ namespace Galaretka.ShapeGraph.Editor.Graph
             commands.GraphChanged += OnGraphChanged;
 
             BuildUi();
-            if (boundAsset != null)
+
+            ShapeGraphAsset restored = TryRestoreSessionAsset();
+            if (restored != null)
+            {
+                BindAsset(restored);
+            }
+            else if (boundAsset != null)
+            {
                 BindAsset(boundAsset);
+            }
 
             Undo.undoRedoPerformed += OnUndoRedo;
         }
@@ -58,12 +69,16 @@ namespace Galaretka.ShapeGraph.Editor.Graph
         {
             Undo.undoRedoPerformed -= OnUndoRedo;
             if (commands != null)
+            {
                 commands.GraphChanged -= OnGraphChanged;
+            }
             previews?.Dispose();
             previews = null;
             graphView = null;
             commands = null;
             dirtyTracker = null;
+            parametersPane = null;
+            inspectorPane = null;
         }
 
         private void BuildUi()
@@ -87,7 +102,9 @@ namespace Galaretka.ShapeGraph.Editor.Graph
             var ping = new Button(() =>
             {
                 if (boundAsset != null)
+                {
                     EditorGUIUtility.PingObject(boundAsset);
+                }
             }) { text = "Ping" };
             toolbar.Add(ping);
 
@@ -122,6 +139,10 @@ namespace Galaretka.ShapeGraph.Editor.Graph
 
             var side = new VisualElement();
             side.AddToClassList("side-column");
+
+            parametersPane = new ParametersPane(commands);
+            side.Add(parametersPane);
+
             inspectorPane = new NodeInspectorPane(commands);
             side.Add(inspectorPane);
 
@@ -140,43 +161,55 @@ namespace Galaretka.ShapeGraph.Editor.Graph
         public void BindAsset(ShapeGraphAsset asset)
         {
             boundAsset = asset;
+            PersistSessionAsset(asset);
+
             if (assetField != null && assetField.value != asset)
+            {
                 assetField.SetValueWithoutNotify(asset);
+            }
 
             titleContent = new GUIContent(asset != null ? $"Shape Graph — {asset.name}" : "Shape Graph");
 
-            if (commands == null || graphView == null || previews == null)
-                return;
+            if (commands == null || graphView == null || previews == null) return;
 
             commands.Bind(asset);
             previews.Bind(asset, previewSeed);
             previews.SubscribeMaster(tex =>
             {
                 if (masterPreview != null)
+                {
                     masterPreview.image = tex;
+                }
             });
 
             graphView.LoadFromAsset();
             emptyState.style.display = asset == null || asset.Nodes.Count == 0
                 ? DisplayStyle.Flex
                 : DisplayStyle.None;
-            inspectorPane.SetSelection(null);
+            inspectorPane?.SetSelection(null);
+            parametersPane?.Refresh();
         }
 
         private void OnGraphChanged(GraphChangeKind kind)
         {
             previews?.NotifyDirtyFromTracker();
+            parametersPane?.Refresh();
 
             if (kind == GraphChangeKind.Structure || kind == GraphChangeKind.Bound)
             {
                 EditorApplication.delayCall += RefreshGraphView;
             }
+
+            if (kind == GraphChangeKind.Structure || kind == GraphChangeKind.Properties)
+            {
+                ShapeGraphAsset graph = boundAsset;
+                EditorApplication.delayCall += () => GraphCommandService.RebuildSceneInstances(graph);
+            }
         }
 
         private void OnUndoRedo()
         {
-            if (boundAsset == null)
-                return;
+            if (boundAsset == null) return;
 
             dirtyTracker?.BumpStructure();
             dirtyTracker?.InvalidateAll(boundAsset);
@@ -184,18 +217,46 @@ namespace Galaretka.ShapeGraph.Editor.Graph
             {
                 RefreshGraphView();
                 previews?.RequestRebuildAll();
+                parametersPane?.Refresh();
+                GraphCommandService.RebuildSceneInstances(boundAsset);
             };
         }
 
         private void RefreshGraphView()
         {
-            if (graphView == null)
-                return;
+            if (graphView == null) return;
 
             graphView.LoadFromAsset();
             emptyState.style.display = boundAsset == null || boundAsset.Nodes.Count == 0
                 ? DisplayStyle.Flex
                 : DisplayStyle.None;
+        }
+
+        private static void PersistSessionAsset(ShapeGraphAsset asset)
+        {
+            if (asset == null)
+            {
+                SessionState.EraseString(SessionAssetGuidKey);
+                return;
+            }
+
+            string path = AssetDatabase.GetAssetPath(asset);
+            string guid = AssetDatabase.AssetPathToGUID(path);
+            if (!string.IsNullOrEmpty(guid))
+            {
+                SessionState.SetString(SessionAssetGuidKey, guid);
+            }
+        }
+
+        private static ShapeGraphAsset TryRestoreSessionAsset()
+        {
+            string guid = SessionState.GetString(SessionAssetGuidKey, string.Empty);
+            if (string.IsNullOrEmpty(guid)) return null;
+
+            string path = AssetDatabase.GUIDToAssetPath(guid);
+            if (string.IsNullOrEmpty(path)) return null;
+
+            return AssetDatabase.LoadAssetAtPath<ShapeGraphAsset>(path);
         }
 
         private static void LoadStyles(VisualElement root)
@@ -206,11 +267,15 @@ namespace Galaretka.ShapeGraph.Editor.Graph
             {
                 string[] guids = AssetDatabase.FindAssets("ShapeGraphEditor t:StyleSheet");
                 if (guids != null && guids.Length > 0)
+                {
                     sheet = AssetDatabase.LoadAssetAtPath<StyleSheet>(AssetDatabase.GUIDToAssetPath(guids[0]));
+                }
             }
 
             if (sheet != null)
+            {
                 root.styleSheets.Add(sheet);
+            }
         }
     }
 }

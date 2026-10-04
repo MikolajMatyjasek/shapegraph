@@ -20,25 +20,35 @@ namespace Galaretka.ShapeGraph.Components
     [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer), typeof(PolygonCollider2D))]
     public class ProceduralShapeInstance : MonoBehaviour
     {
-        [SerializeField] private ShapeGraphAsset graphAsset;
-        [SerializeField] private int seed = 1337;
+        [SerializeField] 
+        private ShapeGraphAsset graphAsset;
+        [SerializeField] 
+        private int seed = 1337;
 
         [Header("Materials & Rendering")]
-        [SerializeField] private Material customMaterial;
-        [SerializeField] private string sortingLayerName = "Default";
-        [SerializeField] private int orderInLayer;
+        [SerializeField] 
+        private Material customMaterial;
+        [SerializeField] 
+        private string sortingLayerName = "Default";
+        [SerializeField] 
+        private int orderInLayer;
 
         [Header("Parameter Overrides")]
-        [SerializeField] private List<ParameterOverrideEntry> overrides = new();
+        [SerializeField] 
+        private List<ParameterOverrideEntry> overrides = new();
 
         private Mesh runtimeMesh;
+        private ShapeGraphAsset subscribedGraph;
 
         public ShapeGraphAsset Graph
         {
             get => graphAsset;
             set
             {
+                if (graphAsset == value) return;
+                UnsubscribeGraph();
                 graphAsset = value;
+                SubscribeGraph();
                 Rebuild();
             }
         }
@@ -85,12 +95,28 @@ namespace Galaretka.ShapeGraph.Components
 
         public IReadOnlyList<ParameterOverrideEntry> Overrides => overrides;
 
-        private void OnEnable() => Rebuild();
+        private void OnEnable()
+        {
+            SubscribeGraph();
+            Rebuild();
+        }
+
+        private void OnDisable() => UnsubscribeGraph();
+
+        private void OnDestroy() => UnsubscribeGraph();
 
         private void OnValidate()
         {
-            ApplySorting();
-            ApplyMaterial();
+            if (this == null) return;
+
+            // Graph reference may change via inspector without going through the setter.
+            if (subscribedGraph != graphAsset)
+            {
+                UnsubscribeGraph();
+                SubscribeGraph();
+            }
+
+            Rebuild();
         }
 
         public void SetOverride(string parameterName, ParameterValue value)
@@ -175,10 +201,7 @@ namespace Galaretka.ShapeGraph.Components
                 int pathCount = 0;
                 for (int i = 0; i < paths.Length; i++)
                 {
-                    if (paths[i] != null && paths[i].Length >= 3)
-                    {
-                        pathCount++;
-                    }
+                    if (paths[i] != null && paths[i].Length >= 3) pathCount++;
                 }
 
                 col.pathCount = pathCount;
@@ -209,10 +232,27 @@ namespace Galaretka.ShapeGraph.Components
             ShapeBaker.BakeToStaticGameObject(this);
         }
 
+        private void SubscribeGraph()
+        {
+            if (graphAsset == null || subscribedGraph == graphAsset) return;
+
+            graphAsset.OnGraphModified += OnGraphModified;
+            subscribedGraph = graphAsset;
+        }
+
+        private void UnsubscribeGraph()
+        {
+            if (subscribedGraph == null) return;
+
+            subscribedGraph.OnGraphModified -= OnGraphModified;
+            subscribedGraph = null;
+        }
+
+        private void OnGraphModified() => Rebuild();
+
         private Dictionary<ParameterId, ParameterValue> BuildOverrideMap()
         {
-            if (overrides.Count == 0 || graphAsset == null)
-                return null;
+            if (overrides.Count == 0 || graphAsset == null) return null;
 
             var map = new Dictionary<ParameterId, ParameterValue>();
             for (int i = 0; i < overrides.Count; i++)
@@ -250,7 +290,7 @@ namespace Galaretka.ShapeGraph.Components
 
         private void ClearRuntimeGeometry()
         {
-            if (runtimeMesh != null)
+            if (runtimeMesh != null) 
             {
                 runtimeMesh.Clear();
             }

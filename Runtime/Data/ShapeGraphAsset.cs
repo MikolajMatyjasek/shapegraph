@@ -123,10 +123,6 @@ namespace Galaretka.ShapeGraph.Data
             NotifyModified();
         }
 
-        /// <summary>
-        /// Registers a node in the document list. Editor owns sub-asset lifecycle
-        /// (<c>AssetDatabase.AddObjectToAsset</c> / destroy); samples may use HideAndDontSave instances.
-        /// </summary>
         public void AddNodeDirectly(ShapeNode node)
         {
             if (node == null) return;
@@ -170,7 +166,47 @@ namespace Galaretka.ShapeGraph.Data
             }
         }
 
+        public int SanitizeOrphanConnections()
+        {
+            var portBuffer = new List<NodePort>(16);
+            int removed = 0;
+            for (int i = connections.Count - 1; i >= 0; i--)
+            {
+                NodeConnection c = connections[i];
+                ShapeNode from = GetNodeById(c.FromNodeId);
+                ShapeNode to = GetNodeById(c.ToNodeId);
+                if (from == null || to == null ||
+                    !HasPort(from, c.FromPortId, PortDirection.Output, portBuffer) ||
+                    !HasPort(to, c.ToPortId, PortDirection.Input, portBuffer))
+                {
+                    connections.RemoveAt(i);
+                    removed++;
+                }
+            }
+
+            if (removed > 0)
+            {
+                Debug.LogWarning(
+                    $"[ShapeGraph] Removed {removed} orphan connection(s) from '{name}'.");
+                NotifyModified();
+            }
+
+            return removed;
+        }
+
         public void NotifyModified() => OnGraphModified?.Invoke();
+
+        private static bool HasPort(ShapeNode node, PortId portId, PortDirection direction, List<NodePort> buffer)
+        {
+            buffer.Clear();
+            node.CollectPorts(buffer);
+            for (int i = 0; i < buffer.Count; i++)
+            {
+                if (buffer[i].Id == portId && buffer[i].Direction == direction) return true;
+            }
+
+            return false;
+        }
 
         #endregion
     }

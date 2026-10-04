@@ -4,52 +4,36 @@ using UnityEngine;
 
 namespace Galaretka.ShapeGraph.Editor.Graph.Preview
 {
-    /// <summary>
-    /// Orthographic blit of <see cref="GeneratedMeshData"/> into a RenderTexture.
-    /// </summary>
     public sealed class PreviewRenderer : System.IDisposable
     {
-        private GameObject root;
-        private Camera camera;
-        private MeshFilter meshFilter;
-        private MeshRenderer meshRenderer;
+        private PreviewRenderUtility previewUtility;
         private Mesh mesh;
         private Material material;
         private bool ownsMaterial;
 
         public void EnsureCreated()
         {
-            if (root != null)
-                return;
+            if (previewUtility != null) return;
 
-            root = new GameObject("ShapeGraph_PreviewRoot")
+            previewUtility = new PreviewRenderUtility();
+            previewUtility.camera.orthographic = true;
+            previewUtility.camera.nearClipPlane = -10f;
+            previewUtility.camera.farClipPlane = 10f;
+            previewUtility.camera.clearFlags = CameraClearFlags.SolidColor;
+            previewUtility.camera.backgroundColor = new Color(0.12f, 0.13f, 0.15f, 1f);
+            previewUtility.camera.transform.position = new Vector3(0f, 0f, -5f);
+            previewUtility.camera.transform.rotation = Quaternion.identity;
+
+            if (previewUtility.lights != null && previewUtility.lights.Length > 0)
             {
-                hideFlags = HideFlags.HideAndDontSave
-            };
-
-            var camGo = new GameObject("Camera") { hideFlags = HideFlags.HideAndDontSave };
-            camGo.transform.SetParent(root.transform, false);
-            camera = camGo.AddComponent<Camera>();
-            camera.orthographic = true;
-            camera.nearClipPlane = -10f;
-            camera.farClipPlane = 10f;
-            camera.clearFlags = CameraClearFlags.SolidColor;
-            camera.backgroundColor = new Color(0.12f, 0.13f, 0.15f, 1f);
-            camera.enabled = false;
-            camera.cameraType = CameraType.Preview;
-            camera.forceIntoRenderTexture = true;
-
-            var meshGo = new GameObject("Mesh") { hideFlags = HideFlags.HideAndDontSave };
-            meshGo.transform.SetParent(root.transform, false);
-            meshFilter = meshGo.AddComponent<MeshFilter>();
-            meshRenderer = meshGo.AddComponent<MeshRenderer>();
+                previewUtility.lights[0].intensity = 1.2f;
+                previewUtility.lights[0].transform.rotation = Quaternion.Euler(40f, 40f, 0f);
+            }
 
             mesh = new Mesh { name = "ShapeGraph_PreviewMesh" };
             mesh.hideFlags = HideFlags.HideAndDontSave;
-            meshFilter.sharedMesh = mesh;
 
-            material = FindVertexColorMaterial();
-            meshRenderer.sharedMaterial = material;
+            material = CreateVertexColorMaterial();
         }
 
         public RenderTexture Render(GeneratedMeshData data, int size)
@@ -58,8 +42,7 @@ namespace Galaretka.ShapeGraph.Editor.Graph.Preview
             size = Mathf.Clamp(size, 32, 1024);
 
             if (data.Vertices == null || data.Vertices.Length < 3 ||
-                data.Triangles == null || data.Triangles.Length < 3)
-                return null;
+                data.Triangles == null || data.Triangles.Length < 3) return null;
 
             mesh.Clear();
             mesh.vertices = data.Vertices;
@@ -72,9 +55,8 @@ namespace Galaretka.ShapeGraph.Editor.Graph.Preview
 
             Bounds b = mesh.bounds;
             float extent = Mathf.Max(b.extents.x, b.extents.y, 0.01f);
-            camera.orthographicSize = extent * 1.25f;
-            camera.transform.position = new Vector3(b.center.x, b.center.y, -5f);
-            camera.transform.rotation = Quaternion.identity;
+            previewUtility.camera.orthographicSize = extent * 1.25f;
+            previewUtility.camera.transform.position = new Vector3(b.center.x, b.center.y, -5f);
 
             var rt = new RenderTexture(size, size, 16, RenderTextureFormat.ARGB32)
             {
@@ -84,10 +66,17 @@ namespace Galaretka.ShapeGraph.Editor.Graph.Preview
             };
             rt.Create();
 
-            RenderTexture previous = camera.targetTexture;
-            camera.targetTexture = rt;
-            camera.Render();
-            camera.targetTexture = previous;
+            previewUtility.BeginStaticPreview(new Rect(0f, 0f, size, size));
+            previewUtility.DrawMesh(mesh, Matrix4x4.identity, material, 0);
+            previewUtility.camera.Render();
+            Texture2D previewTex = previewUtility.EndStaticPreview();
+
+            if (previewTex != null)
+            {
+                Graphics.Blit(previewTex, rt);
+                Object.DestroyImmediate(previewTex);
+            }
+
             return rt;
         }
 
@@ -105,24 +94,24 @@ namespace Galaretka.ShapeGraph.Editor.Graph.Preview
                 material = null;
             }
 
-            if (root != null)
+            if (previewUtility != null)
             {
-                Object.DestroyImmediate(root);
-                root = null;
+                previewUtility.Cleanup();
+                previewUtility = null;
             }
-
-            camera = null;
-            meshFilter = null;
-            meshRenderer = null;
         }
 
-        private Material FindVertexColorMaterial()
+        private Material CreateVertexColorMaterial()
         {
             Shader shader = Shader.Find("Sprites/Default");
             if (shader == null)
+            {
                 shader = Shader.Find("Unlit/Color");
+            }
             if (shader == null)
+            {
                 shader = Shader.Find("Hidden/Internal-GUITexture");
+            }
 
             if (shader != null)
             {
@@ -138,7 +127,9 @@ namespace Galaretka.ShapeGraph.Editor.Graph.Preview
         {
             var colors = new Color32[count];
             for (int i = 0; i < count; i++)
+            {
                 colors[i] = color;
+            }
             return colors;
         }
     }

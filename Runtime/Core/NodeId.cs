@@ -4,12 +4,13 @@ using UnityEngine;
 namespace Galaretka.ShapeGraph.Core
 {
     [Serializable]
-    public readonly struct NodeId : IEquatable<NodeId>
+    // Not a readonly struct: Unity must deserialize mutable backing fields across domain reload.
+    public struct NodeId : IEquatable<NodeId>
     {
-        [SerializeField] 
-        private readonly ulong partA;
-        [SerializeField] 
-        private readonly ulong partB;
+        [SerializeField]
+        private ulong partA;
+        [SerializeField]
+        private ulong partB;
 
         public bool IsValid => partA != 0 || partB != 0;
 
