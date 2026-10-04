@@ -1,0 +1,18 @@
+{
+    "name": "Galaretka.Shapegraph.Editor",
+    "rootNamespace": "Galaretka.ShapeGraph.Editor",
+    "references": [
+        "GUID:4719e48303cb5694e8bfe7d74276dcc9"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
